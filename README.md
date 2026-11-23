@@ -1,4 +1,4 @@
-# Amigo Invisible
+# Secret Santa
 
 App for organizing Secret Santa (*amigo invisible*) draws. Domain vocabulary in `GLOSSARY.md`, decisions in `docs/adr/`, phases in `docs/PLAN.md`.
 

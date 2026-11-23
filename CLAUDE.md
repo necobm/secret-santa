@@ -1,17 +1,17 @@
 @AGENTS.md
 
-# Amigo Invisible
+# Secret Santa (Amigo Invisible)
 
-- Vocabulario del dominio: `GLOSSARY.md` (úsalo en código, UI y conversación).
-- Decisiones: `docs/adr/`. Fases y estado: `docs/PLAN.md`.
-- Diseño aprobado (design spec v2): https://claude.ai/artifact/HojtqxiWmoPVp4Gpe9jjrT — los tokens están en `src/app/globals.css`.
-- Memoria Engram: proyecto `secret-santa`.
+- Domain vocabulary: `GLOSSARY.md` (use it in code, UI and conversation; code and UI use the Spanish terms).
+- Decisions: `docs/adr/`. Phases and status: `docs/PLAN.md`.
+- Approved design (design spec v2): https://claude.ai/artifact/HojtqxiWmoPVp4Gpe9jjrT — the tokens are in `src/app/globals.css`.
+- Engram memory: project `secret-santa`.
 
 ## Skills
 
-Cárgalas siempre que la tarea entre en su ámbito, antes de escribir código:
+Always load them when the task falls within their scope, before writing code:
 
-- `vercel-react-best-practices` — al escribir, revisar o refactorizar cualquier componente React, página, layout, data fetching, Server Action o route handler de Next.js.
-- `vercel-composition-patterns` — al diseñar o refactorizar la API de componentes (compound components, contextos, demasiadas props booleanas).
+- `vercel-react-best-practices` — when writing, reviewing or refactoring any React component, page, layout, data fetching, Server Action or Next.js route handler.
+- `vercel-composition-patterns` — when designing or refactoring component APIs (compound components, contexts, too many boolean props).
 
-Si una regla de estas skills contradice la documentación de la versión instalada de Next (`node_modules/next/dist/docs/`), manda la documentación.
+If a rule from these skills contradicts the documentation for the installed Next version (`node_modules/next/dist/docs/`), the documentation wins.

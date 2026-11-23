@@ -1,38 +1,38 @@
 # Plan
 
-Modelo del dominio en `GLOSSARY.md`; decisiones en `docs/adr/`.
+Domain model in `GLOSSARY.md`; decisions in `docs/adr/`.
 
-## Fases
+## Phases
 
-1. **Diseño del frontend con Claude Design** — antes de escribir código de UI, diseñar las pantallas en Claude Design y fijar el **design spec** (tokens de color/tipografía/espaciado, componentes y pantallas). El frontend se implementa a partir de ese spec, no al revés.
-   Canvas (v2 "estilo concurso", **aprobado** 2026-11-20): https://claude.ai/artifact/HojtqxiWmoPVp4Gpe9jjrT
-   Pantallas mínimas:
-   - Registro / login del Organizador
-   - Lista de Sorteos del Organizador
-   - Crear Sorteo (nombre, Presupuesto, Fecha de entrega, casilla "no participo")
-   - Panel del Sorteo — estado Abierto (Participantes, copiar Enlaces personales, sortear)
-   - Panel del Sorteo — estado Sorteado (Verificación, Visto/pendiente, tu Asignación, Revelar, Rehacer el sorteo, borrar)
-   - Página del Enlace personal — antes del sorteo ("todavía no se ha sorteado") y después (Destinatario + sus Le gusta / No le gusta); edición de los propios gustos
-2. **Esqueleto** — Next.js + SQLite (ADR-0002), esquema y migraciones. **Hecho** 2026-11-20.
-   - Next.js 16 (App Router, `output: "standalone"`), Tailwind 4 con los tokens del spec en `src/app/globals.css`, Nunito.
-   - Drizzle ORM + better-sqlite3: esquema en `src/db/schema.ts`, migraciones SQL en `drizzle/` (`npm run db:generate` / `npm run db:migrate`), BD en `DATABASE_PATH` (por defecto `data/secret-santa.db`).
-   - Las restricciones que puede garantizar la BD (nombre único sin mayúsculas, un solo Participante-Organizador, sin autorregalo, nadie recibe dos veces) están en el esquema con tests en `src/db/schema.test.ts`. La Cadena única es cosa del dominio (fase 3).
-   - Ojo: con `cacheComponents`, llamar a `connection()` antes de consultar SQLite en Server Components.
-3. **Dominio** — generación de la Cadena y Verificación, con tests. **Hecho** 2026-11-20.
-   - `src/dominio/cadena.ts`: `generarCadena` (baraja con `crypto.randomInt` y cierra el anillo: todas las Cadenas equiprobables) y `verificar` (solo recuentos, sin nombres).
-   - `src/dominio/sorteo.ts`: `sortear`, `rehacerSorteo` y `verificarSorteo`, transaccionales, con `ErrorDeDominio` y códigos.
-4. **Cuenta de organizador** — registro y login con email y contraseña (sin recuperación, ADR-0001). **Hecho** 2026-11-20.
-   - `src/cuentas/cuentas.ts`: registro, `autenticar`, sesiones en BD (tabla `sesiones`, solo el hash SHA-256 del token; 30 días). Contraseñas con scrypt de Node (`password.ts`).
-   - `src/cuentas/sesion.ts` (server-only): cookie httpOnly `sesion`, `organizadorActual()` (React `cache`) y `requerirOrganizador()`. Toda Server Action del Organizador debe llamar a `requerirOrganizador()`.
-   - `src/proxy.ts`: redirección optimista de `/sorteos/*` a `/entrar` si no hay cookie.
-   - Pantalla `/entrar` (pestañas Entrar / Crear cuenta) según el design spec; `/sorteos` provisional; `/` redirige a `/sorteos`.
-   - Pendiente: límite de intentos de login (fuerza bruta).
-5. **Implementación de pantallas** según el design spec de la fase 1. **Hecho** 2026-11-20.
-   - Rutas: `/sorteos` (Mis Sorteos), `/sorteos/nuevo`, `/sorteos/[id]` (panel Abierto / Sorteado), `/p/[token]` (Enlace personal, `noindex`).
-   - Dominio nuevo: `gestion.ts` (crear/editar/borrar Sorteo, añadir/quitar/renombrar Participante), `consultas.ts` (listados, panel, revelar, Enlace personal, gustos, Visto), `valores.ts` (validación y formato), `errores.ts`.
-   - UI base en `src/ui/` (botones con relieve como variantes explícitas, tarjetas, insignias, avatares, `Confirmar` con `<dialog>`).
-   - Visto se marca desde el cliente (`MarcarVisto`) para que ni el prefetch de Next ni las vistas previas de WhatsApp cuenten como Visto.
-   - Probado con un flujo completo en Chrome (Playwright, script fuera del repo): 19 pasos sin errores.
-   - Decidido: con el Sorteo Sorteado, añadir o quitar un Participante rehace el sorteo en la misma operación, tras confirmar ("cambiarán todas las Asignaciones").
-   - Decidido: rehacer puede repetir la Cadena anterior (no se fuerza una distinta).
-6. **Despliegue** en el hosting compartido (Node.js vía Passenger). Copiar `public/`, `.next/static/` y `drizzle/` junto a `.next/standalone/` y aplicar migraciones al arrancar o con un script.
+1. **Frontend design with Claude Design** — before writing any UI code, design the screens in Claude Design and settle the **design spec** (color/typography/spacing tokens, components and screens). The frontend is implemented from that spec, not the other way around.
+   Canvas (v2 "game show style", **approved** 2026-11-20): https://claude.ai/artifact/HojtqxiWmoPVp4Gpe9jjrT
+   Minimum screens:
+   - Organizer sign-up / sign-in
+   - Organizer's list of Draws
+   - Create Draw (name, Budget, Exchange date, "I'm not participating" checkbox)
+   - Draw panel — Open state (Participants, copy Personal links, draw)
+   - Draw panel — Drawn state (Verification, Seen/pending, your Assignment, Reveal, Redo the draw, delete)
+   - Personal link page — before the draw ("not drawn yet") and after (Recipient + their Likes / Dislikes); editing one's own likes
+2. **Skeleton** — Next.js + SQLite (ADR-0002), schema and migrations. **Done** 2026-11-20.
+   - Next.js 16 (App Router, `output: "standalone"`), Tailwind 4 with the spec's tokens in `src/app/globals.css`, Nunito.
+   - Drizzle ORM + better-sqlite3: schema in `src/db/schema.ts`, SQL migrations in `drizzle/` (`npm run db:generate` / `npm run db:migrate`), DB at `DATABASE_PATH` (defaults to `data/secret-santa.db`).
+   - The constraints the DB can guarantee (case-insensitive unique name, a single Organizer-Participant, no self-gifting, nobody receives twice) live in the schema, with tests in `src/db/schema.test.ts`. The single Chain is the domain's job (phase 3).
+   - Watch out: with `cacheComponents`, call `connection()` before querying SQLite in Server Components.
+3. **Domain** — Chain generation and Verification, with tests. **Done** 2026-11-20.
+   - `src/dominio/cadena.ts`: `generarCadena` (shuffles with `crypto.randomInt` and closes the ring: all Chains are equally likely) and `verificar` (counts only, no names).
+   - `src/dominio/sorteo.ts`: `sortear`, `rehacerSorteo` and `verificarSorteo`, transactional, with `ErrorDeDominio` and error codes.
+4. **Organizer account** — sign-up and sign-in with email and password (no recovery, ADR-0001). **Done** 2026-11-20.
+   - `src/cuentas/cuentas.ts`: sign-up, `autenticar`, sessions in the DB (`sesiones` table, storing only the SHA-256 hash of the token; 30 days). Passwords with Node's scrypt (`password.ts`).
+   - `src/cuentas/sesion.ts` (server-only): httpOnly `sesion` cookie, `organizadorActual()` (React `cache`) and `requerirOrganizador()`. Every Organizer Server Action must call `requerirOrganizador()`.
+   - `src/proxy.ts`: optimistic redirect from `/sorteos/*` to `/entrar` when there is no cookie.
+   - `/entrar` screen (Sign in / Create account tabs) per the design spec; provisional `/sorteos`; `/` redirects to `/sorteos`.
+   - Pending: login attempt limit (brute force).
+5. **Screen implementation** per the phase 1 design spec. **Done** 2026-11-20.
+   - Routes: `/sorteos` (My Draws), `/sorteos/nuevo`, `/sorteos/[id]` (Open / Drawn panel), `/p/[token]` (Personal link, `noindex`).
+   - New domain modules: `gestion.ts` (create/edit/delete Draw, add/remove/rename Participant), `consultas.ts` (listings, panel, reveal, Personal link, likes, Seen), `valores.ts` (validation and formatting), `errores.ts`.
+   - Base UI in `src/ui/` (raised buttons as explicit variants, cards, badges, avatars, `Confirmar` with `<dialog>`).
+   - Seen is marked from the client (`MarcarVisto`) so that neither Next's prefetch nor WhatsApp link previews count as Seen.
+   - Tested with a full flow in Chrome (Playwright, script outside the repo): 19 steps with no errors.
+   - Decided: once the Draw is Drawn, adding or removing a Participant redoes the draw in the same operation, after confirmation ("all Assignments will change").
+   - Decided: redoing may repeat the previous Chain (a different one is not forced).
+6. **Deployment** to the shared hosting (Node.js via Passenger). Copy `public/`, `.next/static/` and `drizzle/` next to `.next/standalone/` and apply migrations on startup or with a script.
