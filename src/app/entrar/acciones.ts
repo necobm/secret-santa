@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { autenticar, PASSWORD_MIN, registrarOrganizador, type ErrorRegistro } from "@/cuentas/cuentas";
+import { intentarAcceso } from "@/cuentas/acceso";
+import { PASSWORD_MIN, registrarOrganizador, type ErrorRegistro } from "@/cuentas/cuentas";
 import { iniciarSesion, terminarSesion } from "@/cuentas/sesion";
 import { getDb } from "@/db/client";
 
@@ -15,11 +17,24 @@ const texto = (fd: FormData, campo: string) => {
   return typeof v === "string" ? v : "";
 };
 
+/** IP del cliente según el proxy (Passenger/Apache). Falsificable sin proxy: el límite por email no depende de ella. */
+async function ipCliente() {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || null;
+}
+
 export async function entrar(_: EstadoAcceso, fd: FormData): Promise<EstadoAcceso> {
   const email = texto(fd, "email");
-  const id = await autenticar(getDb(), email, texto(fd, "password"));
-  if (id === null) return { error: "Email o contraseña incorrectos.", email };
-  await iniciarSesion(id);
+  const r = await intentarAcceso(getDb(), email, texto(fd, "password"), await ipCliente());
+  if (!r.ok) {
+    if (r.error === "credenciales") return { error: "Email o contraseña incorrectos.", email };
+    const minutos = Math.max(1, Math.ceil((r.hasta.getTime() - Date.now()) / 60_000));
+    return {
+      error: `Demasiados intentos. Vuelve a probar dentro de ${minutos} ${minutos === 1 ? "minuto" : "minutos"}.`,
+      email,
+    };
+  }
+  await iniciarSesion(r.organizadorId);
   redirect("/sorteos");
 }
 

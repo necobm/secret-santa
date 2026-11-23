@@ -26,7 +26,7 @@ Domain model in `GLOSSARY.md`; decisions in `docs/adr/`.
    - `src/cuentas/sesion.ts` (server-only): httpOnly `sesion` cookie, `organizadorActual()` (React `cache`) and `requerirOrganizador()`. Every Organizer Server Action must call `requerirOrganizador()`.
    - `src/proxy.ts`: optimistic redirect from `/sorteos/*` to `/entrar` when there is no cookie.
    - `/entrar` screen (Sign in / Create account tabs) per the design spec; provisional `/sorteos`; `/` redirects to `/sorteos`.
-   - Pending: login attempt limit (brute force).
+   - Login attempt limit (brute force), added 2026-11-23: `src/cuentas/acceso.ts`, fixed 15-minute window, 5 attempts per email and 20 per IP, stored in the `intentos_acceso` table. The attempt is counted before the password is checked, so parallel requests cannot bypass it; a successful login resets the email counter. The IP comes from `X-Forwarded-For` (spoofable without a proxy; the email limit does not depend on it).
 5. **Screen implementation** per the phase 1 design spec. **Done** 2026-11-20.
    - Routes: `/sorteos` (My Draws), `/sorteos/nuevo`, `/sorteos/[id]` (Open / Drawn panel), `/p/[token]` (Personal link, `noindex`).
    - New domain modules: `gestion.ts` (create/edit/delete Draw, add/remove/rename Participant), `consultas.ts` (listings, panel, reveal, Personal link, likes, Seen), `valores.ts` (validation and formatting), `errores.ts`.

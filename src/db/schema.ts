@@ -41,6 +41,20 @@ export const sesiones = sqliteTable(
   (t) => [index("sesiones_organizador_idx").on(t.organizadorId)],
 );
 
+/**
+ * Intentos de entrar por clave ("email:…" o "ip:…") en una ventana fija, contra fuerza bruta.
+ * `desde` es el inicio de la ventana; al pasar la ventana el contador vuelve a 1.
+ */
+export const intentosAcceso = sqliteTable(
+  "intentos_acceso",
+  {
+    clave: text("clave").primaryKey(),
+    intentos: integer("intentos").notNull(),
+    desde: integer("desde", { mode: "timestamp" }).notNull(),
+  },
+  (t) => [index("intentos_acceso_desde_idx").on(t.desde)],
+);
+
 export const sorteos = sqliteTable(
   "sorteos",
   {
