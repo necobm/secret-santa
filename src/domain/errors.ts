@@ -10,6 +10,7 @@ export const MESSAGES = {
   "invalid-draw-name": "Escribe un nombre para el Sorteo (máximo 80 caracteres).",
   "duplicate-name": "Ya hay un Participante con ese nombre.",
   "invalid-budget": "El Presupuesto debe ser una cantidad en euros, por ejemplo 30 o 25,50.",
+  "invalid-budget-range": "En un rango de Presupuesto, la primera cantidad debe ser menor que la segunda.",
   "invalid-date": "La Fecha de entrega no es válida.",
   "text-too-long": "El texto es demasiado largo (máximo 500 caracteres).",
 } as const;

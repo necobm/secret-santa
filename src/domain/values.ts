@@ -20,11 +20,28 @@ export function drawName(input: string) {
 }
 
 /** "30", "25,50", "25.5 €" → cents. Empty → null. */
-export function budgetCents(input: string): number | null {
+function amountCents(input: string): number | null {
   const s = input.replace("€", "").trim().replace(",", ".");
   if (!s) return null;
   if (!/^\d{1,6}(\.\d{1,2})?$/.test(s)) throw new DomainError("invalid-budget");
   return Math.round(Number(s) * 100);
+}
+
+/** A single amount (`budgetMaxCents` null) or a range, in euro cents. Both null = no Budget. */
+export interface Budget {
+  budgetCents: number | null;
+  budgetMaxCents: number | null;
+}
+
+/**
+ * The Budget from the two amounts the Organizer types. Only one filled → a single amount;
+ * both filled → a range (equal amounts collapse into a single amount).
+ */
+export function budget(from: string, to: string): Budget {
+  const [a, b] = [amountCents(from), amountCents(to)];
+  if (a === null || b === null || a === b) return { budgetCents: a ?? b, budgetMaxCents: null };
+  if (a > b) throw new DomainError("invalid-budget-range");
+  return { budgetCents: a, budgetMaxCents: b };
 }
 
 /** A valid YYYY-MM-DD. Empty → null. */
@@ -47,10 +64,18 @@ export function likesText(input: string) {
   return s;
 }
 
-/** 3000 → "30 €", 2550 → "25,50 €". */
-export function formatBudget(cents: number) {
-  const euros = cents / 100;
-  return `${euros.toLocaleString("es-ES", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })} €`;
+const euros = (cents: number) =>
+  (cents / 100).toLocaleString("es-ES", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 });
+
+/** 3000 → "30 €", 2550 → "25,50 €", 2000–3000 → "20–30 €". No Budget → null. */
+export function formatBudget({ budgetCents, budgetMaxCents }: Budget) {
+  if (budgetCents === null) return null;
+  return budgetMaxCents === null ? `${euros(budgetCents)} €` : `${euros(budgetCents)}–${euros(budgetMaxCents)} €`;
+}
+
+/** Cents → the text an input shows for editing: 2550 → "25,50". null → "". */
+export function amountInput(cents: number | null) {
+  return cents === null ? "" : String(cents / 100).replace(".", ",");
 }
 
 /** "2026-12-24" → "24 dic 2026" (Spanish month abbreviations, shown to users). */

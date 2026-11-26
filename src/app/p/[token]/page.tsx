@@ -51,7 +51,7 @@ async function Content({ params }: { params: PageProps<"/p/[token]">["params"] }
 
   const { draw, participant, recipient } = link;
   const details = [
-    draw.budgetCents !== null ? formatBudget(draw.budgetCents) : null,
+    formatBudget(draw),
     draw.exchangeDate ? formatDate(draw.exchangeDate, false) : null,
   ].filter((d): d is string => d !== null);
 

@@ -5,7 +5,7 @@ import { draws, participants } from "@/db/schema";
 import type { Random } from "./chain";
 import { loadDraw, redoInTx, type Tx } from "./draw";
 import { DomainError } from "./errors";
-import { budgetCents, drawName, exchangeDate, participantName } from "./values";
+import { budget, drawName, exchangeDate, participantName } from "./values";
 
 // The Organizer's operations on their Draws. All of them require the Draw to be theirs.
 
@@ -13,6 +13,8 @@ export interface DrawInput {
   name: string;
   /** Text as the Organizer types it ("30", "25,50"); empty = no Budget. */
   budget: string;
+  /** Upper end of a Budget range, same format; empty = a single amount. */
+  budgetMax: string;
   /** YYYY-MM-DD; empty = no Exchange date. */
   exchangeDate: string;
 }
@@ -22,7 +24,7 @@ const newToken = () => randomBytes(18).toString("base64url");
 function validateInput(input: DrawInput) {
   return {
     name: drawName(input.name),
-    budgetCents: budgetCents(input.budget),
+    ...budget(input.budget, input.budgetMax),
     exchangeDate: exchangeDate(input.exchangeDate),
   };
 }

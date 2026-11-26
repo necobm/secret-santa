@@ -63,8 +63,10 @@ export const draws = sqliteTable(
       .notNull()
       .references(() => organizers.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    /** Budget in euro cents; optional. */
+    /** Budget in euro cents: the single amount, or the lower end of a range; optional. */
     budgetCents: integer("budget_cents"),
+    /** Upper end of a Budget range in euro cents; null for a single amount. */
+    budgetMaxCents: integer("budget_max_cents"),
     /** Exchange date as YYYY-MM-DD; optional. */
     exchangeDate: text("exchange_date"),
     status: text("status", { enum: DRAW_STATUSES }).notNull().default("open"),
@@ -74,6 +76,10 @@ export const draws = sqliteTable(
     index("draws_organizer_idx").on(t.organizerId),
     check("draws_status_chk", sql`status in ('open', 'drawn')`),
     check("draws_budget_chk", sql`budget_cents is null or budget_cents >= 0`),
+    check(
+      "draws_budget_max_chk",
+      sql`budget_max_cents is null or (budget_cents is not null and budget_max_cents > budget_cents)`,
+    ),
   ],
 );
 

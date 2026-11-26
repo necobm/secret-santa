@@ -49,6 +49,7 @@ export async function createDrawAction(_: Result, fd: FormData): Promise<Result>
   const fields = {
     name: text(fd, "name"),
     budget: text(fd, "budget"),
+    budgetMax: text(fd, "budgetMax"),
     date: text(fd, "date"),
     yourName: text(fd, "yourName"),
   };
@@ -57,6 +58,7 @@ export async function createDrawAction(_: Result, fd: FormData): Promise<Result>
     id = createDraw(getDb(), org.id, {
       name: fields.name,
       budget: fields.budget,
+      budgetMax: fields.budgetMax,
       exchangeDate: fields.date,
       organizerName: fd.get("notParticipating") ? null : fields.yourName,
     });
@@ -72,6 +74,7 @@ export async function editDrawAction(drawId: number, _: Result, fd: FormData) {
     editDraw(getDb(), org, drawId, {
       name: text(fd, "name"),
       budget: text(fd, "budget"),
+      budgetMax: text(fd, "budgetMax"),
       exchangeDate: text(fd, "date"),
     }),
   );

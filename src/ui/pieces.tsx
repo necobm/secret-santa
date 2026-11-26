@@ -81,6 +81,26 @@ export function Field({ label, id, children, help }: { label: ReactNode; id: str
   );
 }
 
+/** The Budget's two amounts, "from" and "to": fill only the first for a single amount. */
+export function BudgetInputs({ id = "budget", budget, budgetMax }: { id?: string; budget?: string; budgetMax?: string }) {
+  const amount = `${input} min-w-0 px-3 text-center`;
+  return (
+    <div className="flex items-center gap-2 font-black text-muted">
+      <input id={id} name="budget" inputMode="decimal" placeholder="20" defaultValue={budget} className={amount} />
+      <span aria-hidden="true">–</span>
+      <input
+        name="budgetMax"
+        inputMode="decimal"
+        placeholder="30"
+        aria-label="Hasta (opcional)"
+        defaultValue={budgetMax}
+        className={amount}
+      />
+      <span aria-hidden="true">€</span>
+    </div>
+  );
+}
+
 export function ErrorMessage({ children }: { children?: ReactNode }) {
   return (
     <p aria-live="polite" className="text-sm font-bold text-danger empty:hidden">

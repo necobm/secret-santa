@@ -28,7 +28,7 @@ let ana: number;
 let other: number;
 
 const code = (c: string) => expect.objectContaining({ code: c });
-const input = { name: "Navidad", budget: "30", exchangeDate: "2026-12-24" };
+const input = { name: "Navidad", budget: "30", budgetMax: "", exchangeDate: "2026-12-24" };
 
 function drawWith(...names: string[]) {
   const id = createDraw(db, ana, { ...input, organizerName: names[0] ?? null });
@@ -59,17 +59,29 @@ describe("createDraw", () => {
   });
 
   it("Budget and Exchange date are optional and accept a decimal comma", () => {
-    const a = createDraw(db, ana, { name: "A", budget: "", exchangeDate: "", organizerName: null });
-    const b = createDraw(db, ana, { name: "B", budget: "25,50 €", exchangeDate: "", organizerName: null });
+    const a = createDraw(db, ana, { name: "A", budget: "", budgetMax: "", exchangeDate: "", organizerName: null });
+    const b = createDraw(db, ana, { name: "B", budget: "25,50 €", budgetMax: "", exchangeDate: "", organizerName: null });
     const [da, dbRow] = [a, b].map((id) => db.select().from(draws).where(eq(draws.id, id)).get()!);
-    expect(da).toMatchObject({ budgetCents: null, exchangeDate: null });
-    expect(dbRow.budgetCents).toBe(2550);
+    expect(da).toMatchObject({ budgetCents: null, budgetMaxCents: null, exchangeDate: null });
+    expect(dbRow).toMatchObject({ budgetCents: 2550, budgetMaxCents: null });
+  });
+
+  it.each([
+    ["20", "30", 2000, 3000],
+    ["", "30", 3000, null],
+    ["30", "30", 3000, null],
+  ])("Budget from %o to %o is stored as %o–%o", (budget, budgetMax, cents, maxCents) => {
+    const id = createDraw(db, ana, { ...input, budget, budgetMax, organizerName: null });
+    const d = db.select().from(draws).where(eq(draws.id, id)).get()!;
+    expect(d).toMatchObject({ budgetCents: cents, budgetMaxCents: maxCents });
   });
 
   it.each([
     [{ name: "  " }, "invalid-draw-name"],
     [{ budget: "-5" }, "invalid-budget"],
     [{ budget: "mucho" }, "invalid-budget"],
+    [{ budget: "20", budgetMax: "mucho" }, "invalid-budget"],
+    [{ budget: "30", budgetMax: "20" }, "invalid-budget-range"],
     [{ exchangeDate: "2026-02-30" }, "invalid-date"],
     [{ exchangeDate: "24/12/2026" }, "invalid-date"],
   ])("validates input %o", (change, error) => {
@@ -229,8 +241,10 @@ describe("Personal link", () => {
 
 describe("formatting", () => {
   it("budget and date", () => {
-    expect(formatBudget(3000)).toBe("30 €");
-    expect(formatBudget(2550)).toBe("25,50 €");
+    expect(formatBudget({ budgetCents: 3000, budgetMaxCents: null })).toBe("30 €");
+    expect(formatBudget({ budgetCents: 2550, budgetMaxCents: null })).toBe("25,50 €");
+    expect(formatBudget({ budgetCents: 2000, budgetMaxCents: 2550 })).toBe("20–25,50 €");
+    expect(formatBudget({ budgetCents: null, budgetMaxCents: null })).toBeNull();
     expect(formatDate("2026-12-24")).toBe("24 dic 2026");
     expect(formatDate("2026-12-24", false)).toBe("24 dic");
   });

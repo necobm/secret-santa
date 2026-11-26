@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { PrimaryButton } from "@/ui/buttons";
-import { ErrorMessage, Field, input } from "@/ui/pieces";
+import { BudgetInputs, ErrorMessage, Field, input } from "@/ui/pieces";
 import { createDrawAction } from "../actions";
 
 export function NewDrawForm() {
@@ -16,11 +16,12 @@ export function NewDrawForm() {
       </Field>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        <Field id="budget" label={<>Presupuesto <span className="font-semibold text-muted">(opcional)</span></>}>
-          <div className="relative">
-            <input id="budget" name="budget" inputMode="decimal" placeholder="30" defaultValue={state.fields?.budget} className={`${input} pr-10`} />
-            <span aria-hidden="true" className="absolute top-1/2 right-4 -translate-y-1/2 font-black text-muted">€</span>
-          </div>
+        <Field
+          id="budget"
+          label={<>Presupuesto <span className="font-semibold text-muted">(opcional)</span></>}
+          help="Una cantidad, o rellena las dos para un rango."
+        >
+          <BudgetInputs budget={state.fields?.budget} budgetMax={state.fields?.budgetMax} />
         </Field>
         <Field id="date" label={<>Fecha de entrega <span className="font-semibold text-muted">(opcional)</span></>}>
           <input id="date" name="date" type="date" defaultValue={state.fields?.date} className={input} />

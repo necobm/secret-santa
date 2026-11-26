@@ -69,7 +69,7 @@ async function DrawList() {
               <div className="flex flex-wrap gap-4 text-[15px] font-bold text-muted">
                 <span>{d.participants} Participantes</span>
                 <span>{d.exchangeDate ? formatDate(d.exchangeDate, false) : "Sin fecha"}</span>
-                {d.budgetCents !== null ? <span>{formatBudget(d.budgetCents)}</span> : null}
+                {d.budgetCents !== null ? <span>{formatBudget(d)}</span> : null}
               </div>
               {d.status === "drawn" ? (
                 <div className="flex flex-col gap-1.5">

@@ -86,6 +86,12 @@ describe("schema", () => {
     expect(db.select().from(assignments).all()).toHaveLength(0);
   });
 
+  it("rejects a Budget range whose upper end is not above the lower end", () => {
+    for (const set of [{ budgetCents: 3000, budgetMaxCents: 3000 }, { budgetCents: null, budgetMaxCents: 3000 }]) {
+      expect(() => db.update(draws).set(set).where(eq(draws.id, drawId)).run()).toThrow(/CHECK/);
+    }
+  });
+
   it("rejects a negative Budget", () => {
     expect(() =>
       db.update(draws).set({ budgetCents: -1 }).where(eq(draws.id, drawId)).run(),

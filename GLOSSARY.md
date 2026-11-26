@@ -53,7 +53,7 @@ The Organizer's explicit action to see all Assignments with their names.
 _Avoid_: Show results, unveil
 
 **Budget** (*Presupuesto*):
-The suggested amount per gift in euros, optional and shared by the whole Draw.
+The suggested amount per gift in euros — a single amount or a range (e.g. 20–30 €) — optional and shared by the whole Draw.
 _Avoid_: Limit, maximum price
 
 **Exchange date** (*Fecha de entrega*):

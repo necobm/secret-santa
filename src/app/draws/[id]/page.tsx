@@ -6,7 +6,7 @@ import { requireOrganizer } from "@/accounts/session";
 import { getDb } from "@/db/client";
 import { DomainError } from "@/domain/errors";
 import { drawPanel, type LikesStatus, type Panel } from "@/domain/queries";
-import { formatBudget, formatDate } from "@/domain/values";
+import { amountInput, formatBudget, formatDate } from "@/domain/values";
 import { button } from "@/ui/buttons";
 import { Confirm } from "@/ui/confirm";
 import { CheckIcon, CrossIcon } from "@/ui/icons";
@@ -62,7 +62,6 @@ async function PanelContent({ params }: { params: PageProps<"/draws/[id]">["para
 }
 
 function Header({ panel: { draw } }: { panel: Panel }) {
-  const budget = draw.budgetCents === null ? "" : String(draw.budgetCents / 100).replace(".", ",");
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -73,7 +72,7 @@ function Header({ panel: { draw } }: { panel: Panel }) {
         <span>
           Presupuesto:{" "}
           <strong className="font-black text-ink">
-            {draw.budgetCents === null ? "sin presupuesto" : formatBudget(draw.budgetCents)}
+            {formatBudget(draw) ?? "sin presupuesto"}
           </strong>
         </span>
         <span>
@@ -83,7 +82,8 @@ function Header({ panel: { draw } }: { panel: Panel }) {
         <EditDetails
           action={editDrawAction.bind(null, draw.id)}
           name={draw.name}
-          budget={budget}
+          budget={amountInput(draw.budgetCents)}
+          budgetMax={amountInput(draw.budgetMaxCents)}
           date={draw.exchangeDate ?? ""}
         />
       </div>

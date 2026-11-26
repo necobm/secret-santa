@@ -3,7 +3,7 @@
 import { useActionState, useId, useRef, useState, useTransition } from "react";
 import { DarkButton, IconButton, PrimaryButton, SecondaryButton, WhiteButton } from "@/ui/buttons";
 import { PencilIcon } from "@/ui/icons";
-import { ErrorMessage, Field, input, Notice } from "@/ui/pieces";
+import { BudgetInputs, ErrorMessage, Field, input, Notice } from "@/ui/pieces";
 import type { Result } from "../actions";
 
 type FormAction = (state: Result, fd: FormData) => Promise<Result>;
@@ -103,11 +103,13 @@ export function EditDetails({
   action,
   name,
   budget,
+  budgetMax,
   date,
 }: {
   action: FormAction;
   name: string;
   budget: string;
+  budgetMax: string;
   date: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -127,8 +129,8 @@ export function EditDetails({
           <Field id="edit-name" label="Nombre del Sorteo">
             <input id="edit-name" name="name" required maxLength={80} defaultValue={name} className={input} />
           </Field>
-          <Field id="edit-budget" label="Presupuesto (€, opcional)">
-            <input id="edit-budget" name="budget" inputMode="decimal" defaultValue={budget} className={input} />
+          <Field id="edit-budget" label="Presupuesto (opcional)" help="Una cantidad, o rellena las dos para un rango.">
+            <BudgetInputs id="edit-budget" budget={budget} budgetMax={budgetMax} />
           </Field>
           <Field id="edit-date" label="Fecha de entrega (opcional)">
             <input id="edit-date" name="date" type="date" defaultValue={date} className={input} />
