@@ -16,7 +16,7 @@ To change the schema: edit `src/db/schema.ts`, then run `npm run db:generate` an
 
 ## Database
 
-libSQL via `@libsql/client` (ADR-0004). `TURSO_DATABASE_URL` picks the database; see `.env.example`.
+libSQL via `@libsql/client` (ADR-0004). `TURSO_DATABASE_URL` picks the database; see `.env.example`. Next and the `db:migrate` / `organizer:create` scripts read `.env.local` if it exists; a variable set in the shell takes precedence.
 
 - Local: a SQLite file, `file:data/secret-santa.db` by default. No server or token needed.
 - Production: Turso (`libsql://…` plus `TURSO_AUTH_TOKEN`).
