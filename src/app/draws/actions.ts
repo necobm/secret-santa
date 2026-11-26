@@ -11,8 +11,8 @@ import {
   createDraw,
   deleteDraw,
   editDraw,
+  editParticipant,
   removeParticipant,
-  renameParticipant,
 } from "@/domain/management";
 import { markOrganizerSeen, revealAssignments } from "@/domain/queries";
 
@@ -95,9 +95,17 @@ export async function removeParticipantAction(drawId: number, participantId: num
   return run((org) => removeParticipant(getDb(), org, drawId, participantId));
 }
 
-export async function renameParticipantAction(drawId: number, participantId: number, _: Result, fd: FormData) {
-  const name = text(fd, "name");
-  return run((org) => renameParticipant(getDb(), org, drawId, participantId, name), name);
+export async function editParticipantAction(drawId: number, participantId: number, _: Result, fd: FormData) {
+  const fields = { name: text(fd, "name"), likes: text(fd, "likes"), dislikes: text(fd, "dislikes") };
+  const org = await requireOrganizer();
+  try {
+    editParticipant(getDb(), org.id, drawId, participantId, fields);
+  } catch (e) {
+    if (e instanceof DomainError) return { error: e.message, fields };
+    throw e;
+  }
+  refresh();
+  return {};
 }
 
 export async function runDrawAction(drawId: number) {

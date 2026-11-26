@@ -19,11 +19,11 @@ import {
   markMySeenAction,
   redoDrawAction,
   removeParticipantAction,
-  renameParticipantAction,
+  editParticipantAction,
   revealAction,
   runDrawAction,
 } from "../actions";
-import { AddForm, CopyLink, DrawButton, EditDetails, Rename, Reveal } from "./client";
+import { AddForm, CopyLink, DrawButton, EditDetails, EditParticipant, Reveal } from "./client";
 
 export const metadata: Metadata = { title: "Sorteo · Amigo Invisible" };
 
@@ -125,7 +125,7 @@ function OpenPanel({ panel }: { panel: Panel }) {
                 </div>
                 <div className="flex gap-1.5">
                   <CopyLink token={p.token} />
-                  <Rename name={p.name} action={renameParticipantAction.bind(null, draw.id, p.id)} />
+                  <EditParticipant participant={p} action={editParticipantAction.bind(null, draw.id, p.id)} />
                   <Confirm
                     triggerStyle="inline-flex size-11 flex-none cursor-pointer items-center justify-center rounded-field border-2 border-[#f2c4bf] bg-danger-soft text-danger shadow-[0_3px_0_#f2c4bf]"
                     triggerLabel={`Quitar a ${p.name}`}
@@ -241,7 +241,7 @@ function DrawnPanel({ panel }: { panel: Panel }) {
               </div>
               <div className="flex gap-1.5">
                 <CopyLink token={p.token} />
-                <Rename name={p.name} action={renameParticipantAction.bind(null, draw.id, p.id)} />
+                <EditParticipant participant={p} action={editParticipantAction.bind(null, draw.id, p.id)} />
                 <Confirm
                   triggerStyle="inline-flex size-11 flex-none cursor-pointer items-center justify-center rounded-field border-2 border-[#f2c4bf] bg-danger-soft text-danger shadow-[0_3px_0_#f2c4bf]"
                   triggerLabel={`Quitar a ${p.name}`}

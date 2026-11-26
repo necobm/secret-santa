@@ -5,7 +5,7 @@ import { draws, participants } from "@/db/schema";
 import type { Random } from "./chain";
 import { loadDraw, redoInTx, type Tx } from "./draw";
 import { DomainError } from "./errors";
-import { budget, drawName, exchangeDate, participantName } from "./values";
+import { budget, drawName, exchangeDate, likesText, participantName } from "./values";
 
 // The Organizer's operations on their Draws. All of them require the Draw to be theirs.
 
@@ -112,20 +112,29 @@ export function removeParticipant(
   });
 }
 
-/** Renaming does not touch the Chain, so it is always allowed. */
-export function renameParticipant(
+export interface ParticipantInput {
+  name: string;
+  likes: string;
+  dislikes: string;
+}
+
+/** The Organizer edits a Participant's name and Likes / Dislikes. It does not touch the Chain, so it is always allowed. */
+export function editParticipant(
   db: Db,
   organizerId: number,
   drawId: number,
   participantId: number,
-  name: string,
+  input: ParticipantInput,
 ) {
   db.transaction((tx) => {
     loadDraw(tx, drawId, organizerId);
     loadParticipant(tx, drawId, participantId);
-    const values = participantName(name);
+    const values = participantName(input.name);
     const duplicate = findByNormalizedName(tx, drawId, values.normalizedName);
     if (duplicate && duplicate.id !== participantId) throw new DomainError("duplicate-name");
-    tx.update(participants).set(values).where(eq(participants.id, participantId)).run();
+    tx.update(participants)
+      .set({ ...values, likes: likesText(input.likes), dislikes: likesText(input.dislikes) })
+      .where(eq(participants.id, participantId))
+      .run();
   });
 }

@@ -63,7 +63,7 @@ _Avoid_: Due date, deadline
 ## Participant
 
 **Likes / Dislikes** (*Le gusta / No le gusta*):
-Two free-text fields each Participant writes about themselves to guide their Giver.
+Two free-text fields each Participant writes about themselves to guide their Giver. The Organizer can also edit them.
 _Avoid_: Wish list, wishlist, preferences
 
 **Seen** (*Visto*):

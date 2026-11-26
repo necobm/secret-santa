@@ -50,10 +50,10 @@ async function Content({ params }: { params: PageProps<"/p/[token]">["params"] }
   }
 
   const { draw, participant, recipient } = link;
-  const details = [
-    formatBudget(draw),
-    draw.exchangeDate ? formatDate(draw.exchangeDate, false) : null,
-  ].filter((d): d is string => d !== null);
+  const details: Detail[] = [
+    { label: "Presupuesto", value: formatBudget(draw) },
+    { label: "Fecha de entrega", value: draw.exchangeDate ? formatDate(draw.exchangeDate, false) : null },
+  ].filter((d): d is Detail => d.value !== null);
 
   return (
     <>
@@ -65,7 +65,14 @@ async function Content({ params }: { params: PageProps<"/p/[token]">["params"] }
       {recipient ? (
         <YourRecipient recipient={recipient} details={details} token={token} />
       ) : (
-        <WaitingForDraw details={details} />
+        <>
+          <WaitingForDraw />
+          {details.length ? (
+            <div className="rounded-card bg-surface p-4.5 shadow-[0_6px_0_var(--color-accent-shade)]">
+              <Details details={details} />
+            </div>
+          ) : null}
+        </>
       )}
 
       <LikesForm
@@ -77,7 +84,26 @@ async function Content({ params }: { params: PageProps<"/p/[token]">["params"] }
   );
 }
 
-function WaitingForDraw({ details }: { details: string[] }) {
+interface Detail {
+  label: string;
+  value: string;
+}
+
+/** Budget and Exchange date, large: what the Participant must keep in mind when buying. */
+function Details({ details }: { details: Detail[] }) {
+  return (
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5 self-stretch">
+      {details.map((d) => (
+        <div key={d.label} className="flex flex-col justify-between gap-1 rounded-[14px] border-2 border-[#f3dfa8] bg-pending-soft px-3.5 py-3 text-center">
+          <dt className="text-xs font-black tracking-[0.06em] text-pending uppercase">{d.label}</dt>
+          <dd className="text-[26px] leading-tight font-black text-ink">{d.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function WaitingForDraw() {
   return (
     <div className="flex items-center gap-3.5 rounded-card bg-surface p-4.5 shadow-[0_6px_0_var(--color-accent-shade)]">
       <div className="flex size-13 flex-none items-center justify-center rounded-full bg-pending-soft text-pending">
@@ -87,7 +113,6 @@ function WaitingForDraw({ details }: { details: string[] }) {
         <strong className="text-[19px] font-black">Esperando el sorteo…</strong>
         <span className="text-sm leading-snug font-bold text-muted">
           Vuelve a este enlace cuando se haya sorteado. Mientras, cuenta qué te gusta.
-          {details.length ? ` (${details.join(" · ")})` : null}
         </span>
       </div>
     </div>
@@ -100,7 +125,7 @@ function YourRecipient({
   token,
 }: {
   recipient: NonNullable<Link["recipient"]>;
-  details: string[];
+  details: Detail[];
   token: string;
 }) {
   return (
@@ -110,13 +135,7 @@ function YourRecipient({
         <span className="text-sm font-black tracking-[0.1em] text-muted uppercase">Te ha tocado regalar a…</span>
         <Avatar name={recipient.name} index={2} large />
         <p className="text-[52px] leading-none font-black break-words text-accent">{recipient.name}</p>
-        {details.length ? (
-          <div className="flex flex-wrap justify-center gap-2">
-            {details.map((d) => (
-              <span key={d} className="rounded-full bg-neutral px-3 py-1 text-sm font-extrabold">{d}</span>
-            ))}
-          </div>
-        ) : null}
+        {details.length ? <Details details={details} /> : null}
         <div className="mt-1 flex flex-col gap-2.5 self-stretch text-left">
           <div className="flex flex-col gap-0.5 rounded-[14px] bg-accent-soft px-3.5 py-3">
             <strong className="text-[15px] font-black text-accent">Le gusta</strong>

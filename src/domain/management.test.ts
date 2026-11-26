@@ -8,9 +8,9 @@ import {
   addParticipant,
   createDraw,
   deleteDraw,
+  editParticipant,
   editDraw,
   removeParticipant,
-  renameParticipant,
 } from "./management";
 import {
   drawPanel,
@@ -129,7 +129,7 @@ describe("Participants", () => {
     const id = drawWith("Ana", "Bruno", "Carla");
     runDraw(db, id);
     const before = revealAssignments(db, ana, id);
-    renameParticipant(db, ana, id, byName("Bruno").id, "Bruno G.");
+    editParticipant(db, ana, id, byName("Bruno").id, { name: "Bruno G.", likes: "", dislikes: "" });
     const after = revealAssignments(db, ana, id);
     expect(after.map((a) => a.from.replace("Bruno G.", "Bruno"))).toEqual(before.map((a) => a.from));
   });
@@ -137,8 +137,25 @@ describe("Participants", () => {
   it("renaming to a name in use fails, but changing only the case is allowed", () => {
     const id = drawWith("Ana", "Bruno");
     const bruno = byName("Bruno");
-    expect(() => renameParticipant(db, ana, id, bruno.id, "ana")).toThrow(code("duplicate-name"));
-    expect(() => renameParticipant(db, ana, id, bruno.id, "BRUNO")).not.toThrow();
+    const rename = (name: string) => () => editParticipant(db, ana, id, bruno.id, { name, likes: "", dislikes: "" });
+    expect(rename("ana")).toThrow(code("duplicate-name"));
+    expect(rename("BRUNO")).not.toThrow();
+  });
+
+  it("the Organizer edits a Participant's Likes / Dislikes, which the Participant then sees", () => {
+    drawWith("Ana", "Bruno");
+    editParticipant(db, ana, byName("Bruno").drawId, byName("Bruno").id, {
+      name: "Bruno",
+      likes: "  Café ",
+      dislikes: "Calcetines",
+    });
+    expect(viewLink(db, tokenOf("Bruno")).participant).toEqual({ name: "Bruno", likes: "Café", dislikes: "Calcetines" });
+  });
+
+  it("Likes / Dislikes edited by the Organizer are limited in length", () => {
+    const id = drawWith("Ana", "Bruno");
+    const edit = () => editParticipant(db, ana, id, byName("Bruno").id, { name: "Bruno", likes: "x".repeat(501), dislikes: "" });
+    expect(edit).toThrow(code("text-too-long"));
   });
 });
 

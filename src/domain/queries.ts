@@ -41,6 +41,8 @@ export interface Panel {
     name: string;
     token: string;
     isOrganizer: boolean;
+    likes: string;
+    dislikes: string;
     likesStatus: LikesStatus;
     seen: boolean;
   }[];
@@ -77,6 +79,8 @@ export function drawPanel(db: Db, organizerId: number, drawId: number): Panel {
         name: p.name,
         token: p.token,
         isOrganizer: p.isOrganizer,
+        likes: p.likes,
+        dislikes: p.dislikes,
         likesStatus: likesStatus(p.likes, p.dislikes),
         seen: p.seenAt !== null,
       })),

@@ -3,7 +3,8 @@
 import { useActionState, useId, useRef, useState, useTransition } from "react";
 import { DarkButton, IconButton, PrimaryButton, SecondaryButton, WhiteButton } from "@/ui/buttons";
 import { PencilIcon } from "@/ui/icons";
-import { BudgetInputs, ErrorMessage, Field, input, Notice } from "@/ui/pieces";
+import { MAX_LIKES, MAX_NAME } from "@/domain/values";
+import { BudgetInputs, ErrorMessage, Field, input, Notice, textArea } from "@/ui/pieces";
 import type { Result } from "../actions";
 
 type FormAction = (state: Result, fd: FormData) => Promise<Result>;
@@ -33,8 +34,14 @@ export function CopyLink({ token }: { token: string }) {
   );
 }
 
-/** Opens a <dialog> to rename a Participant. */
-export function Rename({ name, action }: { name: string; action: FormAction }) {
+/** Opens a <dialog> to edit a Participant's name and Likes / Dislikes. */
+export function EditParticipant({
+  participant: { name, likes, dislikes },
+  action,
+}: {
+  participant: { name: string; likes: string; dislikes: string };
+  action: FormAction;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const fieldId = useId();
   const [state, submit, pending] = useActionState(async (prev: Result, fd: FormData) => {
@@ -45,16 +52,21 @@ export function Rename({ name, action }: { name: string; action: FormAction }) {
 
   return (
     <>
-      <IconButton aria-label={`Renombrar a ${name}`} onClick={() => dialog.current?.showModal()}>
+      <IconButton aria-label={`Editar a ${name}`} onClick={() => dialog.current?.showModal()}>
         <PencilIcon />
       </IconButton>
-      <dialog ref={dialog} className="m-auto w-[min(440px,calc(100vw-32px))] rounded-card bg-surface p-0 text-ink backdrop:bg-ink/50">
+      <dialog ref={dialog} className="m-auto w-[min(480px,calc(100vw-32px))] rounded-card bg-surface p-0 text-ink backdrop:bg-ink/50">
         <form action={submit} className="flex flex-col gap-4 p-6">
-          <h2 className="text-2xl font-black">Renombrar</h2>
-          <Field id={fieldId} label="Nombre">
-            <input id={fieldId} name="name" required maxLength={40} defaultValue={state.value ?? name} className={input} />
+          <h2 className="text-2xl font-black">Editar Participante</h2>
+          <Field id={`${fieldId}-name`} label="Nombre" help="Cambiar el nombre no cambia ninguna Asignación.">
+            <input id={`${fieldId}-name`} name="name" required maxLength={MAX_NAME} defaultValue={state.fields?.name ?? name} className={input} />
           </Field>
-          <p className="text-sm text-muted">Cambiar el nombre no cambia ninguna Asignación.</p>
+          <Field id={`${fieldId}-likes`} label={<span className="text-accent">Le gusta</span>}>
+            <textarea id={`${fieldId}-likes`} name="likes" rows={3} maxLength={MAX_LIKES} defaultValue={state.fields?.likes ?? likes} className={textArea} />
+          </Field>
+          <Field id={`${fieldId}-dislikes`} label={<span className="text-danger">No le gusta</span>}>
+            <textarea id={`${fieldId}-dislikes`} name="dislikes" rows={3} maxLength={MAX_LIKES} defaultValue={state.fields?.dislikes ?? dislikes} className={textArea} />
+          </Field>
           <ErrorMessage>{state.error}</ErrorMessage>
           <div className="flex flex-wrap gap-2.5">
             <PrimaryButton type="submit" disabled={pending}>Guardar</PrimaryButton>
