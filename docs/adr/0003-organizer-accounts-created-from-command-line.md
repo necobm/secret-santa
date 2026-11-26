@@ -11,5 +11,5 @@ Amends ADR-0001. The app has no sign-up: only a few trusted people organize Draw
 ## Consequences
 
 - Every Organizer is equally an admin: there are no roles.
-- Creating an account requires shell access to the server. The script runs with `tsx`, a dev dependency, so the deployment (phase 6) has to provide it or ship a compiled version of the script.
+- Creating an account requires access to the database. Since ADR-0004 that means running the script from a developer's machine with the production `TURSO_*` variables; no shell on the server is needed.
 - There is still no password recovery from the web. Since accounts are managed from the command line, a password-reset command would be the natural way to add it later.

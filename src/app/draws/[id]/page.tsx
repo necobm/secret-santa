@@ -47,7 +47,7 @@ async function PanelContent({ params }: { params: PageProps<"/draws/[id]">["para
 
   let panel: Panel;
   try {
-    panel = drawPanel(getDb(), org.id, drawId);
+    panel = await drawPanel(getDb(), org.id, drawId);
   } catch (e) {
     if (e instanceof DomainError) notFound();
     throw e;

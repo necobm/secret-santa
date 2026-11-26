@@ -29,7 +29,7 @@ function validateInput(input: DrawInput) {
   };
 }
 
-function findByNormalizedName(tx: Tx, drawId: number, normalizedName: string) {
+async function findByNormalizedName(tx: Tx, drawId: number, normalizedName: string) {
   return tx
     .select({ id: participants.id })
     .from(participants)
@@ -37,57 +37,59 @@ function findByNormalizedName(tx: Tx, drawId: number, normalizedName: string) {
     .get();
 }
 
-function insertParticipant(tx: Tx, drawId: number, input: string, isOrganizer = false) {
+async function insertParticipant(tx: Tx, drawId: number, input: string, isOrganizer = false) {
   const { name, normalizedName } = participantName(input);
-  if (findByNormalizedName(tx, drawId, normalizedName)) throw new DomainError("duplicate-name");
-  return tx
+  if (await findByNormalizedName(tx, drawId, normalizedName)) throw new DomainError("duplicate-name");
+  const row = await tx
     .insert(participants)
     .values({ drawId, name, normalizedName, token: newToken(), isOrganizer })
     .returning({ id: participants.id })
-    .get().id;
+    .get();
+  return row!.id;
 }
 
 /** Creates an open Draw. With `organizerName`, the Organizer also joins as a Participant. */
-export function createDraw(db: Db, organizerId: number, input: DrawInput & { organizerName: string | null }) {
+export async function createDraw(db: Db, organizerId: number, input: DrawInput & { organizerName: string | null }) {
   const values = validateInput(input);
-  return db.transaction((tx) => {
-    const drawId = tx
+  return db.transaction(async (tx) => {
+    const row = await tx
       .insert(draws)
       .values({ organizerId, ...values })
       .returning({ id: draws.id })
-      .get().id;
-    if (input.organizerName !== null) insertParticipant(tx, drawId, input.organizerName, true);
+      .get();
+    const drawId = row!.id;
+    if (input.organizerName !== null) await insertParticipant(tx, drawId, input.organizerName, true);
     return drawId;
   });
 }
 
-export function editDraw(db: Db, organizerId: number, drawId: number, input: DrawInput) {
+export async function editDraw(db: Db, organizerId: number, drawId: number, input: DrawInput) {
   const values = validateInput(input);
-  db.transaction((tx) => {
-    loadDraw(tx, drawId, organizerId);
-    tx.update(draws).set(values).where(eq(draws.id, drawId)).run();
+  await db.transaction(async (tx) => {
+    await loadDraw(tx, drawId, organizerId);
+    await tx.update(draws).set(values).where(eq(draws.id, drawId)).run();
   });
 }
 
-export function deleteDraw(db: Db, organizerId: number, drawId: number) {
-  db.transaction((tx) => {
-    loadDraw(tx, drawId, organizerId);
-    tx.delete(draws).where(eq(draws.id, drawId)).run();
+export async function deleteDraw(db: Db, organizerId: number, drawId: number) {
+  await db.transaction(async (tx) => {
+    await loadDraw(tx, drawId, organizerId);
+    await tx.delete(draws).where(eq(draws.id, drawId)).run();
   });
 }
 
 /** If the Draw is already drawn, adding redoes the draw in the same operation. */
-export function addParticipant(db: Db, organizerId: number, drawId: number, name: string, random?: Random) {
-  return db.transaction((tx) => {
-    const draw = loadDraw(tx, drawId, organizerId);
-    const id = insertParticipant(tx, drawId, name);
-    if (draw.status === "drawn") redoInTx(tx, drawId, random);
+export async function addParticipant(db: Db, organizerId: number, drawId: number, name: string, random?: Random) {
+  return db.transaction(async (tx) => {
+    const draw = await loadDraw(tx, drawId, organizerId);
+    const id = await insertParticipant(tx, drawId, name);
+    if (draw.status === "drawn") await redoInTx(tx, drawId, random);
     return id;
   });
 }
 
-function loadParticipant(tx: Tx, drawId: number, participantId: number) {
-  const p = tx
+async function loadParticipant(tx: Tx, drawId: number, participantId: number) {
+  const p = await tx
     .select()
     .from(participants)
     .where(and(eq(participants.id, participantId), eq(participants.drawId, drawId)))
@@ -97,18 +99,18 @@ function loadParticipant(tx: Tx, drawId: number, participantId: number) {
 }
 
 /** If the Draw is already drawn, removing redoes the draw (and fails if fewer than 3 would remain). */
-export function removeParticipant(
+export async function removeParticipant(
   db: Db,
   organizerId: number,
   drawId: number,
   participantId: number,
   random?: Random,
 ) {
-  db.transaction((tx) => {
-    const draw = loadDraw(tx, drawId, organizerId);
-    loadParticipant(tx, drawId, participantId);
-    tx.delete(participants).where(eq(participants.id, participantId)).run();
-    if (draw.status === "drawn") redoInTx(tx, drawId, random);
+  await db.transaction(async (tx) => {
+    const draw = await loadDraw(tx, drawId, organizerId);
+    await loadParticipant(tx, drawId, participantId);
+    await tx.delete(participants).where(eq(participants.id, participantId)).run();
+    if (draw.status === "drawn") await redoInTx(tx, drawId, random);
   });
 }
 
@@ -119,20 +121,21 @@ export interface ParticipantInput {
 }
 
 /** The Organizer edits a Participant's name and Likes / Dislikes. It does not touch the Chain, so it is always allowed. */
-export function editParticipant(
+export async function editParticipant(
   db: Db,
   organizerId: number,
   drawId: number,
   participantId: number,
   input: ParticipantInput,
 ) {
-  db.transaction((tx) => {
-    loadDraw(tx, drawId, organizerId);
-    loadParticipant(tx, drawId, participantId);
+  await db.transaction(async (tx) => {
+    await loadDraw(tx, drawId, organizerId);
+    await loadParticipant(tx, drawId, participantId);
     const values = participantName(input.name);
-    const duplicate = findByNormalizedName(tx, drawId, values.normalizedName);
+    const duplicate = await findByNormalizedName(tx, drawId, values.normalizedName);
     if (duplicate && duplicate.id !== participantId) throw new DomainError("duplicate-name");
-    tx.update(participants)
+    await tx
+      .update(participants)
       .set({ ...values, likes: likesText(input.likes), dislikes: likesText(input.dislikes) })
       .where(eq(participants.id, participantId))
       .run();

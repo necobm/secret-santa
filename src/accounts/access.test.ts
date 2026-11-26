@@ -11,8 +11,8 @@ const T0 = new Date("2026-12-01T10:00:00Z");
 const plus = (ms: number) => new Date(T0.getTime() + ms);
 
 beforeEach(async () => {
-  db = openDb(":memory:");
-  runMigrations(db);
+  db = openDb({ url: ":memory:" });
+  await runMigrations(db);
   const r = await createOrganizer(db, "ana@ejemplo.com", "secreto123");
   if (!r.ok) throw new Error(r.error);
   organizerId = r.organizerId;
@@ -76,6 +76,6 @@ describe("attemptSignIn", () => {
   it("deletes expired counters", async () => {
     await fail(2, "otro@ejemplo.com");
     await attemptSignIn(db, "ana@ejemplo.com", "secreto123", null, plus(WINDOW_MS));
-    expect(db.select().from(signInAttempts).all()).toHaveLength(0);
+    expect(await db.select().from(signInAttempts).all()).toHaveLength(0);
   });
 });

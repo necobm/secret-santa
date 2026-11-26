@@ -15,9 +15,9 @@ import { hashPassword, verifyPassword } from "./password";
 
 let db: Db;
 
-beforeEach(() => {
-  db = openDb(":memory:");
-  runMigrations(db);
+beforeEach(async () => {
+  db = openDb({ url: ":memory:" });
+  await runMigrations(db);
 });
 
 describe("password", () => {
@@ -41,7 +41,7 @@ describe("createOrganizer", () => {
   it("creates the Organizer account with the normalized email", async () => {
     const r = await createOrganizer(db, "  Ana@Ejemplo.COM ", "secreto123");
     expect(r.ok).toBe(true);
-    expect(db.select().from(organizers).get()?.email).toBe("ana@ejemplo.com");
+    expect((await db.select().from(organizers).get())?.email).toBe("ana@ejemplo.com");
   });
 
   it.each([
@@ -83,29 +83,29 @@ describe("sessions", () => {
 
   it("finds the session by its token and does not store the token in plain text", async () => {
     const id = await organizer();
-    const { token } = createSession(db, id);
-    expect(findSession(db, token)).toMatchObject({ organizerId: id, email: "ana@ejemplo.com" });
-    expect(db.select().from(sessions).get()?.tokenHash).not.toBe(token);
+    const { token } = await createSession(db, id);
+    expect(await findSession(db, token)).toMatchObject({ organizerId: id, email: "ana@ejemplo.com" });
+    expect((await db.select().from(sessions).get())?.tokenHash).not.toBe(token);
   });
 
-  it("does not find an unknown token", () => {
-    expect(findSession(db, "made-up")).toBeNull();
+  it("does not find an unknown token", async () => {
+    expect(await findSession(db, "made-up")).toBeNull();
   });
 
   it("expires after 30 days", async () => {
     const id = await organizer();
     const now = new Date("2026-12-01T00:00:00Z");
-    const { token } = createSession(db, id, now);
-    expect(findSession(db, token, new Date(now.getTime() + SESSION_DURATION_MS - 1))).not.toBeNull();
-    expect(findSession(db, token, new Date(now.getTime() + SESSION_DURATION_MS))).toBeNull();
+    const { token } = await createSession(db, id, now);
+    expect(await findSession(db, token, new Date(now.getTime() + SESSION_DURATION_MS - 1))).not.toBeNull();
+    expect(await findSession(db, token, new Date(now.getTime() + SESSION_DURATION_MS))).toBeNull();
 
-    deleteExpiredSessions(db, new Date(now.getTime() + SESSION_DURATION_MS));
-    expect(db.select().from(sessions).all()).toHaveLength(0);
+    await deleteExpiredSessions(db, new Date(now.getTime() + SESSION_DURATION_MS));
+    expect(await db.select().from(sessions).all()).toHaveLength(0);
   });
 
   it("signing out invalidates the session", async () => {
-    const { token } = createSession(db, await organizer());
-    deleteSession(db, token);
-    expect(findSession(db, token)).toBeNull();
+    const { token } = await createSession(db, await organizer());
+    await deleteSession(db, token);
+    expect(await findSession(db, token)).toBeNull();
   });
 });

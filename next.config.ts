@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Shared hosting with Passenger (ADR-0002): self-contained build in .next/standalone.
-  output: "standalone",
   cacheComponents: true,
   async redirects() {
     return [{ source: "/", destination: "/draws", permanent: false }];

@@ -5,10 +5,14 @@ import { runMigrations } from "./migrate";
 import { assignments, draws, organizers, participants } from "./schema";
 
 let db: Db;
+
+/** Drizzle wraps the driver's error; the SQLite message (UNIQUE, CHECK…) is in `cause`. */
+const sqliteError = (message: RegExp) =>
+  expect.objectContaining({ cause: expect.objectContaining({ message: expect.stringMatching(message) }) });
 let drawId: number;
 
-function newParticipant(name: string, extra: Partial<typeof participants.$inferInsert> = {}) {
-  return db
+async function newParticipant(name: string, extra: Partial<typeof participants.$inferInsert> = {}) {
+  const row = await db
     .insert(participants)
     .values({
       drawId,
@@ -19,82 +23,83 @@ function newParticipant(name: string, extra: Partial<typeof participants.$inferI
     })
     .returning()
     .get();
+  return row!;
 }
 
-beforeEach(() => {
-  db = openDb(":memory:");
-  runMigrations(db);
-  const org = db
+beforeEach(async () => {
+  db = openDb({ url: ":memory:" });
+  await runMigrations(db);
+  const org = (await db
     .insert(organizers)
     .values({ email: "ana@ejemplo.com", passwordHash: "x" })
     .returning()
-    .get();
-  drawId = db
+    .get())!;
+  drawId = (await db
     .insert(draws)
     .values({ organizerId: org.id, name: "Navidad" })
     .returning()
-    .get().id;
+    .get())!.id;
 });
 
 describe("schema", () => {
-  it("a new Draw is open, with no Budget or Exchange date", () => {
-    const d = db.select().from(draws).where(eq(draws.id, drawId)).get();
+  it("a new Draw is open, with no Budget or Exchange date", async () => {
+    const d = await db.select().from(draws).where(eq(draws.id, drawId)).get();
     expect(d).toMatchObject({ status: "open", budgetCents: null, exchangeDate: null });
   });
 
-  it("rejects two Participants with the same name, case-insensitively", () => {
-    newParticipant("María");
-    expect(() => newParticipant("MARÍA")).toThrow(/UNIQUE/);
+  it("rejects two Participants with the same name, case-insensitively", async () => {
+    await newParticipant("María");
+    await expect(newParticipant("MARÍA")).rejects.toThrow(sqliteError(/UNIQUE/));
   });
 
-  it("allows the same name in different Draws", () => {
-    newParticipant("Bruno");
-    const org2 = db.insert(organizers).values({ email: "b@e.com", passwordHash: "x" }).returning().get();
-    drawId = db.insert(draws).values({ organizerId: org2.id, name: "Otro" }).returning().get().id;
-    expect(() => newParticipant("Bruno")).not.toThrow();
+  it("allows the same name in different Draws", async () => {
+    await newParticipant("Bruno");
+    const org2 = (await db.insert(organizers).values({ email: "b@e.com", passwordHash: "x" }).returning().get())!;
+    drawId = (await db.insert(draws).values({ organizerId: org2.id, name: "Otro" }).returning().get())!.id;
+    await expect(newParticipant("Bruno")).resolves.toMatchObject({ name: "Bruno" });
   });
 
-  it("only one Participant per Draw can be the Organizer", () => {
-    newParticipant("Ana", { isOrganizer: true });
-    newParticipant("Bruno");
-    expect(() => newParticipant("Carla", { isOrganizer: true })).toThrow(/UNIQUE/);
+  it("only one Participant per Draw can be the Organizer", async () => {
+    await newParticipant("Ana", { isOrganizer: true });
+    await newParticipant("Bruno");
+    await expect(newParticipant("Carla", { isOrganizer: true })).rejects.toThrow(sqliteError(/UNIQUE/));
   });
 
-  it("nobody gives to themselves", () => {
-    const a = newParticipant("Ana");
-    expect(() =>
+  it("nobody gives to themselves", async () => {
+    const a = await newParticipant("Ana");
+    await expect(
       db.insert(assignments).values({ drawId, giverId: a.id, recipientId: a.id }).run(),
-    ).toThrow(/CHECK/);
+    ).rejects.toThrow(sqliteError(/CHECK/));
   });
 
-  it("nobody receives twice or gives twice", () => {
-    const [a, b, c] = ["Ana", "Bruno", "Carla"].map((n) => newParticipant(n));
-    db.insert(assignments).values({ drawId, giverId: a.id, recipientId: b.id }).run();
-    expect(() =>
+  it("nobody receives twice or gives twice", async () => {
+    const [a, b, c] = [await newParticipant("Ana"), await newParticipant("Bruno"), await newParticipant("Carla")];
+    await db.insert(assignments).values({ drawId, giverId: a.id, recipientId: b.id }).run();
+    await expect(
       db.insert(assignments).values({ drawId, giverId: c.id, recipientId: b.id }).run(),
-    ).toThrow(/UNIQUE/);
-    expect(() =>
+    ).rejects.toThrow(sqliteError(/UNIQUE/));
+    await expect(
       db.insert(assignments).values({ drawId, giverId: a.id, recipientId: c.id }).run(),
-    ).toThrow(/UNIQUE/);
+    ).rejects.toThrow(sqliteError(/UNIQUE/));
   });
 
-  it("deleting a Draw deletes its Participants and Assignments", () => {
-    const [a, b] = ["Ana", "Bruno"].map((n) => newParticipant(n));
-    db.insert(assignments).values({ drawId, giverId: a.id, recipientId: b.id }).run();
-    db.delete(draws).where(eq(draws.id, drawId)).run();
-    expect(db.select().from(participants).all()).toHaveLength(0);
-    expect(db.select().from(assignments).all()).toHaveLength(0);
+  it("deleting a Draw deletes its Participants and Assignments", async () => {
+    const [a, b] = [await newParticipant("Ana"), await newParticipant("Bruno")];
+    await db.insert(assignments).values({ drawId, giverId: a.id, recipientId: b.id }).run();
+    await db.delete(draws).where(eq(draws.id, drawId)).run();
+    expect(await db.select().from(participants).all()).toHaveLength(0);
+    expect(await db.select().from(assignments).all()).toHaveLength(0);
   });
 
-  it("rejects a Budget range whose upper end is not above the lower end", () => {
+  it("rejects a Budget range whose upper end is not above the lower end", async () => {
     for (const set of [{ budgetCents: 3000, budgetMaxCents: 3000 }, { budgetCents: null, budgetMaxCents: 3000 }]) {
-      expect(() => db.update(draws).set(set).where(eq(draws.id, drawId)).run()).toThrow(/CHECK/);
+      await expect(db.update(draws).set(set).where(eq(draws.id, drawId)).run()).rejects.toThrow(sqliteError(/CHECK/));
     }
   });
 
-  it("rejects a negative Budget", () => {
-    expect(() =>
+  it("rejects a negative Budget", async () => {
+    await expect(
       db.update(draws).set({ budgetCents: -1 }).where(eq(draws.id, drawId)).run(),
-    ).toThrow(/CHECK/);
+    ).rejects.toThrow(sqliteError(/CHECK/));
   });
 });

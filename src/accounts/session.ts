@@ -16,7 +16,7 @@ export interface CurrentOrganizer {
 }
 
 export async function startSession(organizerId: number) {
-  const { token, expiresAt } = createSession(getDb(), organizerId);
+  const { token, expiresAt } = await createSession(getDb(), organizerId);
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -30,8 +30,8 @@ export async function startSession(organizerId: number) {
 export const currentOrganizer = cache(async (): Promise<CurrentOrganizer | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  await connection(); // synchronous SQLite query + clock: request time only
-  const session = findSession(getDb(), token);
+  await connection(); // database query + clock: request time only
+  const session = await findSession(getDb(), token);
   return session ? { id: session.organizerId, email: session.email } : null;
 });
 
@@ -45,6 +45,6 @@ export async function requireOrganizer(): Promise<CurrentOrganizer> {
 export async function endSession() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  if (token) deleteSession(getDb(), token);
+  if (token) await deleteSession(getDb(), token);
   store.delete(SESSION_COOKIE);
 }

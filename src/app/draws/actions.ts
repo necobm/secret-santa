@@ -32,10 +32,10 @@ const text = (fd: FormData, field: string) => {
   return typeof v === "string" ? v : "";
 };
 
-async function run(operation: (organizerId: number) => void, value?: string): Promise<Result> {
+async function run(operation: (organizerId: number) => Promise<unknown>, value?: string): Promise<Result> {
   const org = await requireOrganizer();
   try {
-    operation(org.id);
+    await operation(org.id);
   } catch (e) {
     if (e instanceof DomainError) return { error: e.message, value };
     throw e;
@@ -55,7 +55,7 @@ export async function createDrawAction(_: Result, fd: FormData): Promise<Result>
   };
   let id: number;
   try {
-    id = createDraw(getDb(), org.id, {
+    id = await createDraw(getDb(), org.id, {
       name: fields.name,
       budget: fields.budget,
       budgetMax: fields.budgetMax,
@@ -99,7 +99,7 @@ export async function editParticipantAction(drawId: number, participantId: numbe
   const fields = { name: text(fd, "name"), likes: text(fd, "likes"), dislikes: text(fd, "dislikes") };
   const org = await requireOrganizer();
   try {
-    editParticipant(getDb(), org.id, drawId, participantId, fields);
+    await editParticipant(getDb(), org.id, drawId, participantId, fields);
   } catch (e) {
     if (e instanceof DomainError) return { error: e.message, fields };
     throw e;
@@ -123,5 +123,5 @@ export async function revealAction(drawId: number) {
 
 export async function markMySeenAction(drawId: number) {
   const org = await requireOrganizer();
-  markOrganizerSeen(getDb(), org.id, drawId);
+  await markOrganizerSeen(getDb(), org.id, drawId);
 }

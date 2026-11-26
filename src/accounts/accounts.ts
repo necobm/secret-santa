@@ -30,7 +30,7 @@ export async function createOrganizer(
   if (password.length > PASSWORD_MAX) return { ok: false, error: "password-too-long" };
 
   const passwordHash = await hashPassword(password);
-  const row = db
+  const row = await db
     .insert(organizers)
     .values({ email: normalized, passwordHash })
     .onConflictDoNothing({ target: organizers.email })
@@ -46,7 +46,7 @@ let dummyHash: Promise<string> | undefined;
 /** Returns the Organizer's id if email and password match; otherwise null. */
 export async function authenticate(db: Db, email: string, password: string): Promise<number | null> {
   if (password.length > PASSWORD_MAX) return null;
-  const org = db
+  const org = await db
     .select({ id: organizers.id, passwordHash: organizers.passwordHash })
     .from(organizers)
     .where(eq(organizers.email, normalizeEmail(email)))
@@ -62,28 +62,28 @@ export async function authenticate(db: Db, email: string, password: string): Pro
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 /** Creates a session and returns the token that goes in the cookie. */
-export function createSession(db: Db, organizerId: number, now = new Date()) {
+export async function createSession(db: Db, organizerId: number, now = new Date()) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(now.getTime() + SESSION_DURATION_MS);
-  db.insert(sessions).values({ tokenHash: hashToken(token), organizerId, expiresAt }).run();
+  await db.insert(sessions).values({ tokenHash: hashToken(token), organizerId, expiresAt }).run();
   return { token, expiresAt };
 }
 
-export function findSession(db: Db, token: string, now = new Date()) {
+export async function findSession(db: Db, token: string, now = new Date()) {
   return (
-    db
+    (await db
       .select({ organizerId: organizers.id, email: organizers.email, expiresAt: sessions.expiresAt })
       .from(sessions)
       .innerJoin(organizers, eq(organizers.id, sessions.organizerId))
       .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, now)))
-      .get() ?? null
+      .get()) ?? null
   );
 }
 
-export function deleteSession(db: Db, token: string) {
-  db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token))).run();
+export async function deleteSession(db: Db, token: string) {
+  await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token))).run();
 }
 
-export function deleteExpiredSessions(db: Db, now = new Date()) {
-  db.delete(sessions).where(lte(sessions.expiresAt, now)).run();
+export async function deleteExpiredSessions(db: Db, now = new Date()) {
+  await db.delete(sessions).where(lte(sessions.expiresAt, now)).run();
 }

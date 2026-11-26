@@ -7,7 +7,7 @@
 
 import { createInterface } from "node:readline/promises";
 import { createOrganizer, PASSWORD_MIN, type CreateOrganizerError } from "../src/accounts/accounts";
-import { databasePath, openDb } from "../src/db/client";
+import { dbConfig, openDb } from "../src/db/client";
 
 const MESSAGES: Record<CreateOrganizerError, string> = {
   "invalid-email": "That email does not look valid.",
@@ -66,18 +66,20 @@ async function main() {
   if (!email) throw new Error("Usage: npm run organizer:create -- <email>");
   const password = await askPassword();
 
-  const path = databasePath();
+  const { url } = dbConfig();
   let result;
   try {
-    result = await createOrganizer(openDb(path), email, password);
+    result = await createOrganizer(openDb(), email, password);
   } catch (e) {
-    if (e instanceof Error && /no such table/.test(e.message)) {
-      throw new Error(`The database at ${path} has no tables yet. Run \`npm run db:migrate\` first.`);
+    // Drizzle wraps the driver's error: the SQLite message is in `cause`.
+    const cause = e instanceof Error && e.cause instanceof Error ? e.cause.message : "";
+    if (/no such table/.test(cause)) {
+      throw new Error(`The database at ${url} has no tables yet. Run \`npm run db:migrate\` first.`);
     }
     throw e;
   }
   if (!result.ok) throw new Error(MESSAGES[result.error]);
-  console.log(`Organizer ${email.trim().toLowerCase()} created in ${path}.`);
+  console.log(`Organizer ${email.trim().toLowerCase()} created in ${url}.`);
 }
 
 main().catch((e: unknown) => {

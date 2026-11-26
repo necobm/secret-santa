@@ -14,10 +14,10 @@ Domain model in `GLOSSARY.md`; decisions in `docs/adr/`.
    - Draw panel — Drawn state (Verification, Seen/pending, your Assignment, Reveal, Redo the draw, delete)
    - Personal link page — before the draw ("not drawn yet") and after (Recipient + their Likes / Dislikes); editing one's own likes
 2. **Skeleton** — Next.js + SQLite (ADR-0002), schema and migrations. **Done** 2026-11-20.
-   - Next.js 16 (App Router, `output: "standalone"`), Tailwind 4 with the spec's tokens in `src/app/globals.css`, Nunito.
-   - Drizzle ORM + better-sqlite3: schema in `src/db/schema.ts`, SQL migrations in `drizzle/` (`npm run db:generate` / `npm run db:migrate`), DB at `DATABASE_PATH` (defaults to `data/secret-santa.db`).
+   - Next.js 16 (App Router), Tailwind 4 with the spec's tokens in `src/app/globals.css`, Nunito.
+   - Drizzle ORM + libSQL (originally better-sqlite3; changed by ADR-0004): schema in `src/db/schema.ts`, SQL migrations in `drizzle/` (`npm run db:generate` / `npm run db:migrate`), DB at `TURSO_DATABASE_URL` (defaults to `file:data/secret-santa.db`).
    - The constraints the DB can guarantee (case-insensitive unique name, a single Organizer-Participant, no self-gifting, nobody receives twice) live in the schema, with tests in `src/db/schema.test.ts`. The single Chain is the domain's job (phase 3).
-   - Watch out: with `cacheComponents`, call `connection()` before querying SQLite in Server Components.
+   - Watch out: with `cacheComponents`, call `connection()` before querying the database in Server Components.
 3. **Domain** — Chain generation and Verification, with tests. **Done** 2026-11-20.
    - `src/domain/chain.ts`: `generateChain` (shuffles with `crypto.randomInt` and closes the ring: all Chains are equally likely) and `verify` (counts only, no names).
    - `src/domain/draw.ts`: `runDraw`, `redoDraw` and `verifyDraw`, transactional, with `DomainError` and error codes.
@@ -36,5 +36,6 @@ Domain model in `GLOSSARY.md`; decisions in `docs/adr/`.
    - Tested with a full flow in Chrome (Playwright, script outside the repo): 19 steps with no errors.
    - Decided: once the Draw is Drawn, adding or removing a Participant redoes the draw in the same operation, after confirmation ("all Assignments will change").
    - Decided: redoing may repeat the previous Chain (a different one is not forced).
-6. **Deployment** to the shared hosting (Node.js via Passenger). Copy `public/`, `.next/static/` and `drizzle/` next to `.next/standalone/` and apply migrations on startup or with a script. Provide a way to run `organizer:create` on the server (it needs `tsx`, see ADR-0003).
+6. **Deployment** to Vercel with Turso (ADR-0004, replaces the shared hosting of ADR-0002).
+   - 2026-11-26: driver switched to `@libsql/client`; all queries are async. Migrations run in the `vercel-build` script. Pending: create the Turso database, set `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` in Vercel, deploy, and create the Organizers with `organizer:create` from a local machine.
 7. **English codebase** (2026-11-23): all code, comments, file names, routes, CSS tokens, DB tables/columns and docs renamed to English (rule in `AGENTS.md`); UI text stays Spanish. Migrations were regenerated from scratch as `drizzle/0000_initial.sql`, since nothing had been deployed.

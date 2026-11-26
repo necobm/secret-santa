@@ -1,5 +1,7 @@
 # Next.js + SQLite on shared hosting with Node.js
 
+**Superseded by ADR-0004** (Vercel with Turso).
+
 The app is deployed on shared hosting that supports Node.js apps (Passenger), so we use Next.js with SQLite in a single file on the server, with no separate database service. SQLite is a "for now" choice: it fits the hosting and the expected volume, and does not rule out moving to Postgres later.
 
 ## Considered Options

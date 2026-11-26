@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-type Link = ReturnType<typeof viewLink>;
+type Link = Awaited<ReturnType<typeof viewLink>>;
 
 export default function PersonalLinkPage({ params }: PageProps<"/p/[token]">) {
   return (
@@ -43,7 +43,7 @@ async function Content({ params }: { params: PageProps<"/p/[token]">["params"] }
   await connection();
   let link: Link;
   try {
-    link = viewLink(getDb(), token);
+    link = await viewLink(getDb(), token);
   } catch (e) {
     if (e instanceof DomainError) notFound();
     throw e;

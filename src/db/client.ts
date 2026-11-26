@@ -1,31 +1,39 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
-export function openDb(path: string) {
-  if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
-  const sqlite = new Database(path);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-  return drizzle(sqlite, { schema });
+// libSQL (ADR-0004): Turso in production, a local SQLite file in development, `:memory:` in tests.
+
+export interface DbConfig {
+  url: string;
+  authToken?: string;
+}
+
+export function dbConfig(): DbConfig {
+  return {
+    url: process.env.TURSO_DATABASE_URL ?? "file:data/secret-santa.db",
+    authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+  };
+}
+
+export function openDb({ url, authToken }: DbConfig = dbConfig()) {
+  if (url.startsWith("file:")) mkdirSync(dirname(url.slice("file:".length)), { recursive: true });
+  const client = createClient({ url, authToken });
+  return drizzle(client, { schema });
 }
 
 export type Db = ReturnType<typeof openDb>;
 
-export function databasePath() {
-  return process.env.DATABASE_PATH ?? "data/secret-santa.db";
-}
-
 let db: Db | undefined;
 
 /**
- * The process's single connection (ADR-0002: a single Node process).
+ * One client per server instance; on Vercel each instance has its own.
  * In Server Components, call `connection()` from next/server before querying,
- * or the synchronous query would run during prerendering.
+ * or the query would run during prerendering.
  */
 export function getDb(): Db {
-  db ??= openDb(databasePath());
+  db ??= openDb();
   return db;
 }

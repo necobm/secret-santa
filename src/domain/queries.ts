@@ -14,7 +14,7 @@ export type LikesStatus = "complete" | "likes-only" | "dislikes-only" | "empty";
 const likesStatus = (likes: string, dislikes: string): LikesStatus =>
   likes && dislikes ? "complete" : likes ? "likes-only" : dislikes ? "dislikes-only" : "empty";
 
-export function listDraws(db: Db, organizerId: number) {
+export async function listDraws(db: Db, organizerId: number) {
   return db
     .select({
       id: draws.id,
@@ -51,10 +51,10 @@ export interface Panel {
   verification: Verification;
 }
 
-export function drawPanel(db: Db, organizerId: number, drawId: number): Panel {
-  return db.transaction((tx) => {
-    const draw = loadDraw(tx, drawId, organizerId);
-    const rows = tx
+export async function drawPanel(db: Db, organizerId: number, drawId: number): Promise<Panel> {
+  return db.transaction(async (tx) => {
+    const draw = await loadDraw(tx, drawId, organizerId);
+    const rows = await tx
       .select()
       .from(participants)
       .where(eq(participants.drawId, drawId))
@@ -64,7 +64,7 @@ export function drawPanel(db: Db, organizerId: number, drawId: number): Panel {
     const me = rows.find((p) => p.isOrganizer);
     const target = alias(participants, "target");
     const mine = me
-      ? tx
+      ? await tx
           .select({ recipient: target.name, likes: target.likes, dislikes: target.dislikes })
           .from(assignments)
           .innerJoin(target, eq(target.id, assignments.recipientId))
@@ -85,18 +85,18 @@ export function drawPanel(db: Db, organizerId: number, drawId: number): Panel {
         seen: p.seenAt !== null,
       })),
       myAssignment: mine ?? null,
-      verification: verifyInTx(tx, drawId),
+      verification: await verifyInTx(tx, drawId),
     };
   });
 }
 
 /** Every Assignment with names, in Chain order. Only after confirming "Reveal". */
-export function revealAssignments(db: Db, organizerId: number, drawId: number) {
-  return db.transaction((tx) => {
-    loadDraw(tx, drawId, organizerId);
+export async function revealAssignments(db: Db, organizerId: number, drawId: number) {
+  return db.transaction(async (tx) => {
+    await loadDraw(tx, drawId, organizerId);
     const giver = alias(participants, "giver");
     const recipient = alias(participants, "recipient");
-    const rows = tx
+    const rows = await tx
       .select({
         fromId: assignments.giverId,
         toId: assignments.recipientId,
@@ -126,11 +126,11 @@ export function revealAssignments(db: Db, organizerId: number, drawId: number) {
 }
 
 /** Marks the Organizer's Assignment as Seen (when they view it in their panel). */
-export function markOrganizerSeen(db: Db, organizerId: number, drawId: number) {
-  db.transaction((tx) => {
-    const draw = loadDraw(tx, drawId, organizerId);
+export async function markOrganizerSeen(db: Db, organizerId: number, drawId: number) {
+  await db.transaction(async (tx) => {
+    const draw = await loadDraw(tx, drawId, organizerId);
     if (draw.status !== "drawn") return;
-    tx.update(participants)
+    await tx.update(participants)
       .set({ seenAt: new Date() })
       .where(and(eq(participants.drawId, drawId), eq(participants.isOrganizer, true), isNull(participants.seenAt)))
       .run();
@@ -139,26 +139,26 @@ export function markOrganizerSeen(db: Db, organizerId: number, drawId: number) {
 
 // --- Personal link ---
 
-function participantByToken(db: Db | Tx, token: string) {
-  const p = db.select().from(participants).where(eq(participants.token, token)).get();
+async function participantByToken(db: Db | Tx, token: string) {
+  const p = await db.select().from(participants).where(eq(participants.token, token)).get();
   if (!p) throw new DomainError("link-not-found");
   return p;
 }
 
 /** What a Participant sees through their Personal link. */
-export function viewLink(db: Db, token: string) {
-  return db.transaction((tx) => {
-    const me = participantByToken(tx, token);
-    const draw = tx.select().from(draws).where(eq(draws.id, me.drawId)).get()!;
+export async function viewLink(db: Db, token: string) {
+  return db.transaction(async (tx) => {
+    const me = await participantByToken(tx, token);
+    const draw = (await tx.select().from(draws).where(eq(draws.id, me.drawId)).get())!;
     const target = alias(participants, "target");
     const recipient =
       draw.status === "drawn"
-        ? (tx
+        ? ((await tx
             .select({ name: target.name, likes: target.likes, dislikes: target.dislikes })
             .from(assignments)
             .innerJoin(target, eq(target.id, assignments.recipientId))
             .where(eq(assignments.giverId, me.id))
-            .get() ?? null)
+            .get()) ?? null)
         : null;
     return {
       draw: {
@@ -175,16 +175,17 @@ export function viewLink(db: Db, token: string) {
 }
 
 /** The Participant has seen their current Assignment (only the first time counts). */
-export function markSeen(db: Db, token: string) {
-  const me = participantByToken(db, token);
-  const has = db.select().from(assignments).where(eq(assignments.giverId, me.id)).get();
+export async function markSeen(db: Db, token: string) {
+  const me = await participantByToken(db, token);
+  const has = await db.select().from(assignments).where(eq(assignments.giverId, me.id)).get();
   if (!has || me.seenAt) return;
-  db.update(participants).set({ seenAt: new Date() }).where(eq(participants.id, me.id)).run();
+  await db.update(participants).set({ seenAt: new Date() }).where(eq(participants.id, me.id)).run();
 }
 
-export function saveLikes(db: Db, token: string, likes: string, dislikes: string) {
-  const me = participantByToken(db, token);
-  db.update(participants)
+export async function saveLikes(db: Db, token: string, likes: string, dislikes: string) {
+  const me = await participantByToken(db, token);
+  await db
+    .update(participants)
     .set({ likes: likesText(likes), dislikes: likesText(dislikes) })
     .where(eq(participants.id, me.id))
     .run();

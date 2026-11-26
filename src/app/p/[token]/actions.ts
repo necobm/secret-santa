@@ -19,7 +19,7 @@ const text = (fd: FormData, field: string) => {
 
 export async function saveLikesAction(token: string, _: LikesResult, fd: FormData): Promise<LikesResult> {
   try {
-    saveLikes(getDb(), token, text(fd, "likes"), text(fd, "dislikes"));
+    await saveLikes(getDb(), token, text(fd, "likes"), text(fd, "dislikes"));
   } catch (e) {
     if (e instanceof DomainError) return { error: e.message };
     throw e;
@@ -30,7 +30,7 @@ export async function saveLikesAction(token: string, _: LikesResult, fd: FormDat
 
 export async function markSeenAction(token: string) {
   try {
-    markSeen(getDb(), token);
+    await markSeen(getDb(), token);
   } catch (e) {
     if (!(e instanceof DomainError)) throw e;
   }

@@ -30,7 +30,7 @@ export default function DrawsPage() {
 
 async function DrawList() {
   const org = await requireOrganizer();
-  const draws = listDraws(getDb(), org.id);
+  const draws = await listDraws(getDb(), org.id);
 
   if (draws.length === 0) {
     return (

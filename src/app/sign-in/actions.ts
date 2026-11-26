@@ -16,7 +16,7 @@ const text = (fd: FormData, field: string) => {
   return typeof v === "string" ? v : "";
 };
 
-/** Client IP as reported by the proxy (Passenger/Apache). Spoofable without a proxy: the email limit does not depend on it. */
+/** Client IP as reported by the proxy (Vercel). Spoofable without a proxy: the email limit does not depend on it. */
 async function clientIp() {
   const h = await headers();
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || null;
