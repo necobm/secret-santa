@@ -71,6 +71,20 @@ export async function redoDraw(db: Db, drawId: number, options: { organizerId?: 
   });
 }
 
+/**
+ * Reset the draw: Drawn → Open. Discards all Assignments without generating a new Chain.
+ * Keeps Participants, Personal links and likes; Seen goes back to pending.
+ */
+export async function resetDraw(db: Db, drawId: number, options: { organizerId?: number } = {}) {
+  await db.transaction(async (tx) => {
+    const draw = await loadDraw(tx, drawId, options.organizerId);
+    if (draw.status !== "drawn") throw new DomainError("draw-not-drawn");
+    await tx.delete(assignments).where(eq(assignments.drawId, drawId)).run();
+    await tx.update(participants).set({ seenAt: null }).where(eq(participants.drawId, drawId)).run();
+    await tx.update(draws).set({ status: "open" }).where(eq(draws.id, drawId)).run();
+  });
+}
+
 /** Verification of the Draw as stored. */
 export async function verifyDraw(db: Db, drawId: number, organizerId?: number): Promise<Verification> {
   return db.transaction(async (tx) => {

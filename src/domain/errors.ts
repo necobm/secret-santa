@@ -2,7 +2,7 @@
 export const MESSAGES = {
   "draw-not-found": "El Sorteo no existe.",
   "draw-already-drawn": "El Sorteo ya está sorteado.",
-  "draw-not-drawn": "Solo se puede rehacer un Sorteo ya sorteado.",
+  "draw-not-drawn": "El Sorteo todavía no está sorteado.",
   "too-few-participants": "Hacen falta al menos 3 Participantes.",
   "participant-not-found": "Ese Participante no existe.",
   "link-not-found": "Este enlace no es válido.",

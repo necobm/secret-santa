@@ -10,6 +10,7 @@ import {
   deleteDraw,
   editParticipant,
   editDraw,
+  regenerateLink,
   removeParticipant,
 } from "./management";
 import {
@@ -106,6 +107,25 @@ describe("Participants", () => {
     expect(new Set(tokens).size).toBe(3);
   });
 
+  it("a new Personal link replaces the old one and keeps the Assignment, likes and Seen", async () => {
+    const id = await drawWith("Ana", "Bruno", "Carla");
+    await runDraw(db, id);
+    const old = await tokenOf("Bruno");
+    await saveLikes(db, old, "café", "");
+    await markSeen(db, old);
+    const before = await viewLink(db, old);
+
+    const fresh = await regenerateLink(db, ana, id, (await byName("Bruno")).id);
+
+    expect(fresh).not.toBe(old);
+    await expect(viewLink(db, old)).rejects.toThrow(code("link-not-found"));
+    expect(await viewLink(db, fresh)).toEqual(before);
+    const bruno = await byName("Bruno");
+    expect(bruno.likes).toBe("café");
+    expect(bruno.seenAt).not.toBeNull();
+    expect((await verifyDraw(db, id)).valid).toBe(true);
+  });
+
   it("adding to a drawn Draw redoes the draw", async () => {
     const id = await drawWith("Ana", "Bruno", "Carla");
     await runDraw(db, id);
@@ -177,6 +197,7 @@ describe("Draw ownership", () => {
     await expect(deleteDraw(db, other, id)).rejects.toThrow(notTheirs);
     await expect(runDraw(db, id, { organizerId: other })).rejects.toThrow(notTheirs);
     await expect(revealAssignments(db, other, id)).rejects.toThrow(notTheirs);
+    await expect(regenerateLink(db, other, id, (await byName("Bruno")).id)).rejects.toThrow(notTheirs);
   });
 
   it("cannot remove a Participant from another Draw", async () => {

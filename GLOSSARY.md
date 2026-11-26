@@ -27,7 +27,7 @@ The two roles in an Assignment: who gives and who receives.
 _Avoid_: Santa, sender, receiver
 
 **Personal link** (*Enlace personal*):
-A Participant's secret URL, through which they see only their own Assignment. The Organizer shares it through whatever channel they prefer.
+A Participant's secret URL, through which they see only their own Assignment. The Organizer shares it through whatever channel they prefer, and can replace it with a new one if it is lost or leaked: the old one stops working, while the Assignment, Likes / Dislikes and Seen are kept.
 _Avoid_: Token, invitation, access link
 
 **Organizer account** (*Cuenta de organizador*):
@@ -42,14 +42,18 @@ _Avoid_: Round, circle
 
 **Redo the draw** (*Rehacer el sorteo*):
 Discard all of a Draw's Assignments and generate a new Chain. It is the only way to change the Participants once drawn.
-_Avoid_: Redraw, readjust, reset
+_Avoid_: Redraw, readjust
+
+**Reset the draw** (*Reiniciar el sorteo*):
+Discard all of a Draw's Assignments without generating a new Chain, taking the Draw back to Open. Participants, Personal links and Likes / Dislikes are kept; Seen goes back to pending.
+_Avoid_: Undo, cancel
 
 **Verification** (*Verificación*):
 A summary confirming that the Assignments form a valid Chain, without showing any names.
 _Avoid_: Validation, check
 
 **Reveal** (*Revelar*):
-The Organizer's explicit action to see all Assignments with their names.
+The Organizer's explicit action to see all Assignments with their names. The Organizer's own Assignment is also hidden in their panel until they reveal it, so it is not seen when sharing the screen.
 _Avoid_: Show results, unveil
 
 **Budget** (*Presupuesto*):

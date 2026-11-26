@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireOrganizer } from "@/accounts/session";
 import { getDb } from "@/db/client";
-import { redoDraw, runDraw } from "@/domain/draw";
+import { redoDraw, resetDraw, runDraw } from "@/domain/draw";
 import { DomainError } from "@/domain/errors";
 import {
   addParticipant,
@@ -12,6 +12,7 @@ import {
   deleteDraw,
   editDraw,
   editParticipant,
+  regenerateLink,
   removeParticipant,
 } from "@/domain/management";
 import { markOrganizerSeen, revealAssignments } from "@/domain/queries";
@@ -114,6 +115,14 @@ export async function runDrawAction(drawId: number) {
 
 export async function redoDrawAction(drawId: number) {
   return run((org) => redoDraw(getDb(), drawId, { organizerId: org }));
+}
+
+export async function resetDrawAction(drawId: number) {
+  return run((org) => resetDraw(getDb(), drawId, { organizerId: org }));
+}
+
+export async function regenerateLinkAction(drawId: number, participantId: number) {
+  return run((org) => regenerateLink(getDb(), org, drawId, participantId));
 }
 
 export async function revealAction(drawId: number) {

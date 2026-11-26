@@ -39,3 +39,7 @@ Domain model in `GLOSSARY.md`; decisions in `docs/adr/`.
 6. **Deployment** to Vercel with Turso (ADR-0004, replaces the shared hosting of ADR-0002).
    - 2026-11-26: driver switched to `@libsql/client`; all queries are async. Migrations run in the `vercel-build` script. Pending: create the Turso database, set `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` in Vercel, deploy, and create the Organizers with `organizer:create` from a local machine.
 7. **English codebase** (2026-11-23): all code, comments, file names, routes, CSS tokens, DB tables/columns and docs renamed to English (rule in `AGENTS.md`); UI text stays Spanish. Migrations were regenerated from scratch as `drizzle/0000_initial.sql`, since nothing had been deployed.
+8. **Organizer panel extras** (2026-11-26):
+   - The Organizer's own Assignment is hidden by default in the Drawn panel, with Revelar / Ocultar (screen sharing); it counts as Seen when first revealed.
+   - Per Participant, a link button opens a dialog to see the full Personal link, copy it, or generate a new one (`regenerateLink` in `management.ts`): the old token stops working at once.
+   - Reset the draw (`resetDraw` in `draw.ts`): Drawn → Open without generating a new Chain, keeping Participants, links and likes.
