@@ -2,7 +2,7 @@
 
 Organizing Secret Santa (*amigo invisible*) draws: a group of people is randomly assigned who gives a gift to whom.
 
-The UI and the code use the Spanish term shown in parentheses after each English term.
+Code, the database and conversation use the English term; the UI uses the Spanish term in parentheses.
 
 ## Language
 
@@ -12,7 +12,7 @@ _Avoid_: Event, group, match, game
 
 **Organizer** (*Organizador*):
 The person who creates and manages a Draw from their Organizer account. Can see all of its Assignments and is usually also a Participant.
-_Avoid_: Admin, creator, owner
+_Avoid_: Admin, creator, owner (every Organizer is equally an admin; there are no roles)
 
 **Participant** (*Participante*):
 A person included in a Draw, who gives a gift to someone and receives one. Identified only by their name.
@@ -31,7 +31,7 @@ A Participant's secret URL, through which they see only their own Assignment. Th
 _Avoid_: Token, invitation, access link
 
 **Organizer account** (*Cuenta de organizador*):
-The email-and-password registration an Organizer uses to sign in and manage their Draws. Participants have no account.
+The email and password an Organizer uses to sign in and manage their Draws. Created only from the command line (ADR-0003); there is no sign-up. Participants have no account.
 _Avoid_: User, profile, login, Organizer link
 
 ## Draw

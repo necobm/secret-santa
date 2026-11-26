@@ -1,15 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Comprobación optimista: sin cookie de sesión no hay nada que ver en el área del Organizador.
-// La comprobación de verdad (sesión válida en BD) está en requerirOrganizador() y en cada Server Action.
-// El nombre de la cookie debe coincidir con COOKIE_SESION de src/cuentas/sesion.ts.
+// Optimistic check: without a session cookie there is nothing to see in the Organizer area.
+// The real check (valid session in the DB) is in requireOrganizer() and in every Server Action.
+// The cookie name must match SESSION_COOKIE in src/accounts/session.ts.
 export function proxy(request: NextRequest) {
-  if (!request.cookies.has("sesion")) {
-    return NextResponse.redirect(new URL("/entrar", request.url));
+  if (!request.cookies.has("session")) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/sorteos/:path*"],
+  matcher: ["/draws/:path*"],
 };

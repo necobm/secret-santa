@@ -1,28 +1,28 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fdb0169d-084a-4471-b819-b2cf7808d1fa",
+  "id": "e1bf85e4-27f7-4501-9809-48831b152d47",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "asignaciones": {
-      "name": "asignaciones",
+    "assignments": {
+      "name": "assignments",
       "columns": {
-        "sorteo_id": {
-          "name": "sorteo_id",
+        "draw_id": {
+          "name": "draw_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "regalador_id": {
-          "name": "regalador_id",
+        "giver_id": {
+          "name": "giver_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "destinatario_id": {
-          "name": "destinatario_id",
+        "recipient_id": {
+          "name": "recipient_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -30,22 +30,22 @@
         }
       },
       "indexes": {
-        "asignaciones_destinatario_uq": {
-          "name": "asignaciones_destinatario_uq",
+        "assignments_recipient_uq": {
+          "name": "assignments_recipient_uq",
           "columns": [
-            "sorteo_id",
-            "destinatario_id"
+            "draw_id",
+            "recipient_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "asignaciones_sorteo_id_sorteos_id_fk": {
-          "name": "asignaciones_sorteo_id_sorteos_id_fk",
-          "tableFrom": "asignaciones",
-          "tableTo": "sorteos",
+        "assignments_draw_id_draws_id_fk": {
+          "name": "assignments_draw_id_draws_id_fk",
+          "tableFrom": "assignments",
+          "tableTo": "draws",
           "columnsFrom": [
-            "sorteo_id"
+            "draw_id"
           ],
           "columnsTo": [
             "id"
@@ -53,12 +53,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "asignaciones_regalador_id_participantes_id_fk": {
-          "name": "asignaciones_regalador_id_participantes_id_fk",
-          "tableFrom": "asignaciones",
-          "tableTo": "participantes",
+        "assignments_giver_id_participants_id_fk": {
+          "name": "assignments_giver_id_participants_id_fk",
+          "tableFrom": "assignments",
+          "tableTo": "participants",
           "columnsFrom": [
-            "regalador_id"
+            "giver_id"
           ],
           "columnsTo": [
             "id"
@@ -66,12 +66,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "asignaciones_destinatario_id_participantes_id_fk": {
-          "name": "asignaciones_destinatario_id_participantes_id_fk",
-          "tableFrom": "asignaciones",
-          "tableTo": "participantes",
+        "assignments_recipient_id_participants_id_fk": {
+          "name": "assignments_recipient_id_participants_id_fk",
+          "tableFrom": "assignments",
+          "tableTo": "participants",
           "columnsFrom": [
-            "destinatario_id"
+            "recipient_id"
           ],
           "columnsTo": [
             "id"
@@ -81,24 +81,116 @@
         }
       },
       "compositePrimaryKeys": {
-        "asignaciones_sorteo_id_regalador_id_pk": {
+        "assignments_draw_id_giver_id_pk": {
           "columns": [
-            "sorteo_id",
-            "regalador_id"
+            "draw_id",
+            "giver_id"
           ],
-          "name": "asignaciones_sorteo_id_regalador_id_pk"
+          "name": "assignments_draw_id_giver_id_pk"
         }
       },
       "uniqueConstraints": {},
       "checkConstraints": {
-        "asignaciones_no_autoregalo_chk": {
-          "name": "asignaciones_no_autoregalo_chk",
-          "value": "regalador_id <> destinatario_id"
+        "assignments_no_self_gift_chk": {
+          "name": "assignments_no_self_gift_chk",
+          "value": "giver_id <> recipient_id"
         }
       }
     },
-    "organizadores": {
-      "name": "organizadores",
+    "draws": {
+      "name": "draws",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "organizer_id": {
+          "name": "organizer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "budget_cents": {
+          "name": "budget_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "exchange_date": {
+          "name": "exchange_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'open'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "draws_organizer_idx": {
+          "name": "draws_organizer_idx",
+          "columns": [
+            "organizer_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "draws_organizer_id_organizers_id_fk": {
+          "name": "draws_organizer_id_organizers_id_fk",
+          "tableFrom": "draws",
+          "tableTo": "organizers",
+          "columnsFrom": [
+            "organizer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "draws_status_chk": {
+          "name": "draws_status_chk",
+          "value": "status in ('open', 'drawn')"
+        },
+        "draws_budget_chk": {
+          "name": "draws_budget_chk",
+          "value": "budget_cents is null or budget_cents >= 0"
+        }
+      }
+    },
+    "organizers": {
+      "name": "organizers",
       "columns": {
         "id": {
           "name": "id",
@@ -121,8 +213,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "creado_en": {
-          "name": "creado_en",
+        "created_at": {
+          "name": "created_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -131,8 +223,8 @@
         }
       },
       "indexes": {
-        "organizadores_email_unique": {
-          "name": "organizadores_email_unique",
+        "organizers_email_unique": {
+          "name": "organizers_email_unique",
           "columns": [
             "email"
           ],
@@ -144,8 +236,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "participantes": {
-      "name": "participantes",
+    "participants": {
+      "name": "participants",
       "columns": {
         "id": {
           "name": "id",
@@ -154,22 +246,22 @@
           "notNull": true,
           "autoincrement": true
         },
-        "sorteo_id": {
-          "name": "sorteo_id",
+        "draw_id": {
+          "name": "draw_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "nombre": {
-          "name": "nombre",
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "nombre_normalizado": {
-          "name": "nombre_normalizado",
+        "normalized_name": {
+          "name": "normalized_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -182,39 +274,39 @@
           "notNull": true,
           "autoincrement": false
         },
-        "es_organizador": {
-          "name": "es_organizador",
+        "is_organizer": {
+          "name": "is_organizer",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": false
         },
-        "le_gusta": {
-          "name": "le_gusta",
+        "likes": {
+          "name": "likes",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "''"
         },
-        "no_le_gusta": {
-          "name": "no_le_gusta",
+        "dislikes": {
+          "name": "dislikes",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "''"
         },
-        "visto_en": {
-          "name": "visto_en",
+        "seen_at": {
+          "name": "seen_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "creado_en": {
-          "name": "creado_en",
+        "created_at": {
+          "name": "created_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -223,37 +315,37 @@
         }
       },
       "indexes": {
-        "participantes_token_unique": {
-          "name": "participantes_token_unique",
+        "participants_token_unique": {
+          "name": "participants_token_unique",
           "columns": [
             "token"
           ],
           "isUnique": true
         },
-        "participantes_nombre_uq": {
-          "name": "participantes_nombre_uq",
+        "participants_name_uq": {
+          "name": "participants_name_uq",
           "columns": [
-            "sorteo_id",
-            "nombre_normalizado"
+            "draw_id",
+            "normalized_name"
           ],
           "isUnique": true
         },
-        "participantes_organizador_uq": {
-          "name": "participantes_organizador_uq",
+        "participants_organizer_uq": {
+          "name": "participants_organizer_uq",
           "columns": [
-            "sorteo_id"
+            "draw_id"
           ],
           "isUnique": true,
-          "where": "es_organizador = 1"
+          "where": "is_organizer = 1"
         }
       },
       "foreignKeys": {
-        "participantes_sorteo_id_sorteos_id_fk": {
-          "name": "participantes_sorteo_id_sorteos_id_fk",
-          "tableFrom": "participantes",
-          "tableTo": "sorteos",
+        "participants_draw_id_draws_id_fk": {
+          "name": "participants_draw_id_draws_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "draws",
           "columnsFrom": [
-            "sorteo_id"
+            "draw_id"
           ],
           "columnsTo": [
             "id"
@@ -266,54 +358,32 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "sorteos": {
-      "name": "sorteos",
+    "sessions": {
+      "name": "sessions",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
-        "organizador_id": {
-          "name": "organizador_id",
+        "organizer_id": {
+          "name": "organizer_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "nombre": {
-          "name": "nombre",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "presupuesto_centimos": {
-          "name": "presupuesto_centimos",
+        "expires_at": {
+          "name": "expires_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fecha_entrega": {
-          "name": "fecha_entrega",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado": {
-          "name": "estado",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "'abierto'"
+          "autoincrement": false
         },
-        "creado_en": {
-          "name": "creado_en",
+        "created_at": {
+          "name": "created_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -322,21 +392,21 @@
         }
       },
       "indexes": {
-        "sorteos_organizador_idx": {
-          "name": "sorteos_organizador_idx",
+        "sessions_organizer_idx": {
+          "name": "sessions_organizer_idx",
           "columns": [
-            "organizador_id"
+            "organizer_id"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "sorteos_organizador_id_organizadores_id_fk": {
-          "name": "sorteos_organizador_id_organizadores_id_fk",
-          "tableFrom": "sorteos",
-          "tableTo": "organizadores",
+        "sessions_organizer_id_organizers_id_fk": {
+          "name": "sessions_organizer_id_organizers_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "organizers",
           "columnsFrom": [
-            "organizador_id"
+            "organizer_id"
           ],
           "columnsTo": [
             "id"
@@ -347,16 +417,46 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {
-        "sorteos_estado_chk": {
-          "name": "sorteos_estado_chk",
-          "value": "estado in ('abierto', 'sorteado')"
+      "checkConstraints": {}
+    },
+    "sign_in_attempts": {
+      "name": "sign_in_attempts",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
         },
-        "sorteos_presupuesto_chk": {
-          "name": "sorteos_presupuesto_chk",
-          "value": "presupuesto_centimos is null or presupuesto_centimos >= 0"
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "window_start": {
+          "name": "window_start",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
-      }
+      },
+      "indexes": {
+        "sign_in_attempts_window_start_idx": {
+          "name": "sign_in_attempts_window_start_idx",
+          "columns": [
+            "window_start"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
   },
   "views": {},

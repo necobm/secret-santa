@@ -21,9 +21,9 @@ export function databasePath() {
 let db: Db | undefined;
 
 /**
- * Conexión única del proceso (ADR-0002: un solo proceso Node).
- * En Server Components, llamar a `connection()` de next/server antes de consultar,
- * o la consulta síncrona se ejecutaría durante el prerender.
+ * The process's single connection (ADR-0002: a single Node process).
+ * In Server Components, call `connection()` from next/server before querying,
+ * or the synchronous query would run during prerendering.
  */
 export function getDb(): Db {
   db ??= openDb(databasePath());

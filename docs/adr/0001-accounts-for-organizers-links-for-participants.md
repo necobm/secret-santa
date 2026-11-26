@@ -1,5 +1,7 @@
 # Accounts for Organizers, secret links for Participants
 
+_Amended by ADR-0003: Organizer accounts are created from the command line; there is no sign-up._
+
 The Organizer signs in with email and password, because they manage Draws on an ongoing basis and must always be able to sign back in. Participants do not register: they access the app only through their Personal link, which the Organizer shares through whatever channel they prefer. This way nobody but the Organizer has to sign up, and the system does not need to store Participants' emails.
 
 ## Considered Options

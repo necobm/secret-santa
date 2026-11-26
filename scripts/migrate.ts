@@ -3,4 +3,4 @@ import { runMigrations } from "../src/db/migrate";
 
 const path = databasePath();
 runMigrations(openDb(path));
-console.log(`Migraciones aplicadas en ${path}`);
+console.log(`Migrations applied to ${path}`);

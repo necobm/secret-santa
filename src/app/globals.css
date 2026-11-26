@@ -1,36 +1,36 @@
 @import "tailwindcss";
 
-/* Tokens del design spec v2 "estilo concurso":
+/* Tokens from design spec v2 "game show style":
    https://claude.ai/artifact/HojtqxiWmoPVp4Gpe9jjrT */
 @theme {
   --color-accent: #1f6b4f;
-  --color-accent-relieve: #123f2f;
+  --color-accent-shade: #123f2f;
   --color-accent-soft: #e3f0ea;
-  --color-forma-1: #2a7d5e;
-  --color-forma-2: #1a5c44;
+  --color-shape-1: #2a7d5e;
+  --color-shape-2: #1a5c44;
   --color-danger: #b42318;
-  --color-danger-relieve: #7a170f;
+  --color-danger-shade: #7a170f;
   --color-danger-soft: #fdecea;
   --color-ink: #16181d;
   --color-muted: #5b6170;
   --color-bg: #f6f7f9;
   --color-surface: #ffffff;
-  --color-borde: #e4e7ec;
-  --color-neutro: #eef0f3;
-  --color-pendiente: #8a5a00;
-  --color-pendiente-soft: #fff4db;
+  --color-border: #e4e7ec;
+  --color-neutral: #eef0f3;
+  --color-pending: #8a5a00;
+  --color-pending-soft: #fff4db;
 
   --font-sans: var(--font-nunito), system-ui, sans-serif;
 
-  --radius-campo: 12px;
-  --radius-boton: 14px;
-  --radius-tarjeta: 20px;
+  --radius-field: 12px;
+  --radius-button: 14px;
+  --radius-card: 20px;
 
-  /* Relieve: sombra sólida sin difuminar debajo */
-  --shadow-boton: 0 5px 0 var(--color-accent-relieve);
-  --shadow-boton-danger: 0 5px 0 var(--color-danger-relieve);
-  --shadow-boton-neutro: 0 5px 0 var(--color-borde);
-  --shadow-tarjeta: 0 6px 0 var(--color-borde);
+  /* Raised look: a solid, unblurred shadow underneath */
+  --shadow-button: 0 5px 0 var(--color-accent-shade);
+  --shadow-button-danger: 0 5px 0 var(--color-danger-shade);
+  --shadow-button-neutral: 0 5px 0 var(--color-border);
+  --shadow-card: 0 6px 0 var(--color-border);
 }
 
 body {
