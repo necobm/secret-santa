@@ -10,7 +10,6 @@ import { amountInput, formatBudget, formatDate } from "@/domain/values";
 import { button } from "@/ui/buttons";
 import { Confirm } from "@/ui/confirm";
 import { CheckIcon, CrossIcon } from "@/ui/icons";
-import { MarkSeen } from "@/ui/mark-seen";
 import { Avatar, Card, GreenCard, Heading2, SeenBadge, StatusBadge } from "@/ui/pieces";
 import {
   addParticipantAction,
@@ -18,12 +17,14 @@ import {
   editDrawAction,
   markMySeenAction,
   redoDrawAction,
+  regenerateLinkAction,
+  resetDrawAction,
   removeParticipantAction,
   editParticipantAction,
   revealAction,
   runDrawAction,
 } from "../actions";
-import { AddForm, CopyLink, DrawButton, EditDetails, EditParticipant, Reveal } from "./client";
+import { AddForm, CopyLink, DrawButton, EditDetails, EditParticipant, LinkOptions, MyAssignment, Reveal } from "./client";
 
 export const metadata: Metadata = { title: "Sorteo · Amigo Invisible" };
 
@@ -111,7 +112,7 @@ function OpenPanel({ panel }: { panel: Panel }) {
             </span>
           </div>
           <AddForm action={addParticipantAction.bind(null, draw.id)} redoes={false} />
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3.5">
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3.5">
             {participants.map((p, i) => (
               <li key={p.id} className="flex flex-col gap-3 rounded-2xl border-2 border-border bg-surface p-3.5 shadow-[0_4px_0_var(--color-border)]">
                 <div className="flex items-center gap-2.5">
@@ -125,6 +126,7 @@ function OpenPanel({ panel }: { panel: Panel }) {
                 </div>
                 <div className="flex gap-1.5">
                   <CopyLink token={p.token} />
+                <LinkOptions name={p.name} token={p.token} action={regenerateLinkAction.bind(null, draw.id, p.id)} />
                   <EditParticipant participant={p} action={editParticipantAction.bind(null, draw.id, p.id)} />
                   <Confirm
                     triggerStyle="inline-flex size-11 flex-none cursor-pointer items-center justify-center rounded-field border-2 border-[#f2c4bf] bg-danger-soft text-danger shadow-[0_3px_0_#f2c4bf]"
@@ -179,13 +181,13 @@ function DrawnPanel({ panel }: { panel: Panel }) {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6">
         {myAssignment ? (
           <GreenCard>
-            <MarkSeen action={markMySeenAction.bind(null, draw.id)} />
             <span className="text-[13px] font-black tracking-[0.1em] text-[#cfe6da] uppercase">Tu Asignación</span>
-            <p className="text-4xl leading-tight font-black">Regalas a {myAssignment.recipient}</p>
-            <div className="flex flex-col gap-2.5 rounded-[14px] bg-shape-2 p-3.5 leading-normal font-bold">
-              <div><strong className="font-black">Le gusta:</strong> {myAssignment.likes || "aún no lo ha contado."}</div>
-              <div><strong className="font-black">No le gusta:</strong> {myAssignment.dislikes || "aún no lo ha contado."}</div>
-            </div>
+            <MyAssignment
+              recipient={myAssignment.recipient}
+              likes={myAssignment.likes}
+              dislikes={myAssignment.dislikes}
+              markSeen={markMySeenAction.bind(null, draw.id)}
+            />
           </GreenCard>
         ) : null}
 
@@ -227,7 +229,7 @@ function DrawnPanel({ panel }: { panel: Panel }) {
             </span>
           </div>
         </div>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3.5">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3.5">
           {participants.map((p, i) => (
             <li key={p.id} className="flex flex-col gap-3 rounded-2xl border-2 border-border p-3.5 shadow-[0_4px_0_var(--color-border)]">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -241,6 +243,7 @@ function DrawnPanel({ panel }: { panel: Panel }) {
               </div>
               <div className="flex gap-1.5">
                 <CopyLink token={p.token} />
+                <LinkOptions name={p.name} token={p.token} action={regenerateLinkAction.bind(null, draw.id, p.id)} />
                 <EditParticipant participant={p} action={editParticipantAction.bind(null, draw.id, p.id)} />
                 <Confirm
                   triggerStyle="inline-flex size-11 flex-none cursor-pointer items-center justify-center rounded-field border-2 border-[#f2c4bf] bg-danger-soft text-danger shadow-[0_3px_0_#f2c4bf]"
@@ -268,7 +271,7 @@ function DrawnPanel({ panel }: { panel: Panel }) {
           <Heading2>¿Cambia el grupo?</Heading2>
           <p className="leading-normal font-bold text-muted">
             Añadir o quitar Participantes rehace el sorteo: cambian todas las Asignaciones y Visto vuelve a cero. Los enlaces
-            y los gustos se conservan.
+            y los gustos se conservan. Si prefieres volver a la sala de espera sin sortear, reinicia el sorteo.
           </p>
         </div>
         <AddForm action={addParticipantAction.bind(null, draw.id)} redoes />
@@ -282,6 +285,16 @@ function DrawnPanel({ panel }: { panel: Panel }) {
             action={redoDrawAction.bind(null, draw.id)}
           >
             Rehacer el sorteo
+          </Confirm>
+          <Confirm
+            triggerStyle={button.secondary}
+            title="¿Reiniciar el sorteo?"
+            message="El Sorteo vuelve a la sala de espera, sin Asignaciones, y Visto vuelve a cero. Se conservan los Participantes, sus enlaces y sus gustos. Después habrá que volver a sortear."
+            confirmText="Reiniciar"
+            confirmStyle={button.primary}
+            action={resetDrawAction.bind(null, draw.id)}
+          >
+            Reiniciar el sorteo
           </Confirm>
           <DeleteDraw drawId={draw.id} name={draw.name} />
         </div>

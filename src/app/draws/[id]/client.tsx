@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useRef, useState, useTransition } from "react";
 import { DarkButton, IconButton, PrimaryButton, SecondaryButton, WhiteButton } from "@/ui/buttons";
-import { PencilIcon } from "@/ui/icons";
+import { LinkIcon, PencilIcon } from "@/ui/icons";
 import { MAX_LIKES, MAX_NAME } from "@/domain/values";
 import { BudgetInputs, ErrorMessage, Field, input, Notice, textArea } from "@/ui/pieces";
 import type { Result } from "../actions";
@@ -31,6 +31,134 @@ export function CopyLink({ token }: { token: string }) {
     >
       <span aria-live="polite">{copied ? "¡Copiado!" : "Copiar enlace"}</span>
     </button>
+  );
+}
+
+/**
+ * Opens a <dialog> with a Participant's Personal link: see it, copy it, or replace it with a
+ * new one (the old one stops working, for when it is lost or leaked).
+ */
+export function LinkOptions({
+  name,
+  token,
+  action,
+}: {
+  name: string;
+  token: string;
+  action: () => Promise<Result>;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [origin, setOrigin] = useState("");
+  const [step, setStep] = useState<"view" | "confirm" | "regenerated">("view");
+  const [error, setError] = useState<string>();
+  const [pending, startTransition] = useTransition();
+  const { copied, copy } = useCopy(token);
+
+  const open = () => {
+    setOrigin(window.location.origin);
+    setStep("view");
+    setError(undefined);
+    dialog.current?.showModal();
+  };
+  const regenerate = () =>
+    startTransition(async () => {
+      const r = await action();
+      setError(r.error);
+      setStep(r.error ? "view" : "regenerated");
+    });
+
+  return (
+    <>
+      <IconButton aria-label={`Enlace personal de ${name}`} onClick={open}>
+        <LinkIcon />
+      </IconButton>
+      <dialog ref={dialog} className="m-auto w-[min(480px,calc(100vw-32px))] rounded-card bg-surface p-0 text-ink backdrop:bg-ink/50">
+        <div className="flex flex-col gap-4 p-6">
+          <h2 className="text-2xl font-black">Enlace personal de {name}</h2>
+          <p className="rounded-field border-2 border-border bg-bg px-3.5 py-3 font-mono text-sm break-all select-all">
+            {origin ? `${origin}/p/${token}` : null}
+          </p>
+          {step === "regenerated" ? (
+            <p aria-live="polite" className="rounded-xl bg-accent-soft px-3 py-2 text-sm font-bold text-accent">
+              Enlace nuevo generado. El anterior ya no funciona: envíale este.
+            </p>
+          ) : null}
+          {step === "confirm" ? (
+            <Notice>
+              <strong className="text-lg font-black">¿Generar un enlace nuevo?</strong>
+              <span className="font-bold">
+                El enlace actual dejará de funcionar al momento. Su Asignación y sus gustos se conservan.
+              </span>
+              <div className="flex flex-wrap gap-2.5">
+                <DarkButton disabled={pending} onClick={regenerate}>
+                  {pending ? "Generando…" : "Sí, generar"}
+                </DarkButton>
+                <SecondaryButton onClick={() => setStep("view")}>Cancelar</SecondaryButton>
+              </div>
+            </Notice>
+          ) : null}
+          <ErrorMessage>{error}</ErrorMessage>
+          <div className="flex flex-wrap gap-2.5">
+            <PrimaryButton onClick={copy}>
+              <span aria-live="polite">{copied ? "¡Copiado!" : "Copiar enlace"}</span>
+            </PrimaryButton>
+            {step !== "confirm" ? (
+              <SecondaryButton onClick={() => setStep("confirm")}>Generar enlace nuevo</SecondaryButton>
+            ) : null}
+            <SecondaryButton onClick={() => dialog.current?.close()}>Cerrar</SecondaryButton>
+          </div>
+        </div>
+      </dialog>
+    </>
+  );
+}
+
+/**
+ * The Organizer's own Assignment, hidden by default so it is not seen when sharing the screen.
+ * It counts as Seen the first time it is revealed.
+ */
+export function MyAssignment({
+  recipient,
+  likes,
+  dislikes,
+  markSeen,
+}: {
+  recipient: string;
+  likes: string;
+  dislikes: string;
+  markSeen: () => Promise<void>;
+}) {
+  const [shown, setShown] = useState(false);
+  const marked = useRef(false);
+
+  const reveal = () => {
+    setShown(true);
+    if (!marked.current) {
+      marked.current = true;
+      void markSeen();
+    }
+  };
+
+  if (!shown) {
+    return (
+      <>
+        <p className="text-2xl leading-tight font-black">Tu Asignación está oculta</p>
+        <p className="leading-normal font-bold text-accent-soft">
+          Para que nadie la vea si compartes pantalla. Revélala solo cuando estés a solas.
+        </p>
+        <WhiteButton className="self-start" onClick={reveal}>Revelar</WhiteButton>
+      </>
+    );
+  }
+  return (
+    <>
+      <p className="text-4xl leading-tight font-black">Regalas a {recipient}</p>
+      <div className="flex flex-col gap-2.5 rounded-[14px] bg-shape-2 p-3.5 leading-normal font-bold">
+        <div><strong className="font-black">Le gusta:</strong> {likes || "aún no lo ha contado."}</div>
+        <div><strong className="font-black">No le gusta:</strong> {dislikes || "aún no lo ha contado."}</div>
+      </div>
+      <WhiteButton className="self-start" onClick={() => setShown(false)}>Ocultar</WhiteButton>
+    </>
   );
 }
 

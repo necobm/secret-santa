@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { openDb, type Db } from "@/db/client";
 import { runMigrations } from "@/db/migrate";
 import { assignments, draws, organizers, participants } from "@/db/schema";
-import { redoDraw, runDraw, verifyDraw } from "./draw";
+import { redoDraw, resetDraw, runDraw, verifyDraw } from "./draw";
 
 let db: Db;
 let drawId: number;
@@ -99,6 +99,36 @@ describe("redoDraw", () => {
     await expect(redoDraw(db, drawId)).rejects.toThrow(expect.objectContaining({ code: "too-few-participants" }));
     expect(await savedChain()).toEqual(afterDelete);
     expect(afterDelete.length).toBeLessThan(before.length);
+  });
+});
+
+describe("resetDraw", () => {
+  it("goes back to open without Assignments, keeping links and likes, and resets Seen", async () => {
+    await withParticipants("Ana", "Bruno", "Carla");
+    await runDraw(db, drawId);
+    await db.update(participants).set({ seenAt: new Date(), likes: "café" }).where(eq(participants.drawId, drawId)).run();
+    const before = await db.select().from(participants).all();
+
+    await resetDraw(db, drawId);
+
+    const after = await db.select().from(participants).all();
+    expect(await status()).toBe("open");
+    expect(await savedChain()).toHaveLength(0);
+    expect(after.map((p) => p.token)).toEqual(before.map((p) => p.token));
+    expect(after.every((p) => p.likes === "café" && p.seenAt === null)).toBe(true);
+  });
+
+  it("can be drawn again afterwards", async () => {
+    await withParticipants("Ana", "Bruno", "Carla");
+    await runDraw(db, drawId);
+    await resetDraw(db, drawId);
+    await runDraw(db, drawId);
+    expect((await verifyDraw(db, drawId)).valid).toBe(true);
+  });
+
+  it("only a drawn Draw can be reset", async () => {
+    await withParticipants("Ana", "Bruno", "Carla");
+    await expect(resetDraw(db, drawId)).rejects.toThrow(expect.objectContaining({ code: "draw-not-drawn" }));
   });
 });
 

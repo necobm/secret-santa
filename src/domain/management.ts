@@ -141,3 +141,17 @@ export async function editParticipant(
       .run();
   });
 }
+
+/**
+ * Gives a Participant a new Personal link (if the old one was lost or leaked).
+ * The old link stops working at once; the Assignment, likes and Seen are kept.
+ */
+export async function regenerateLink(db: Db, organizerId: number, drawId: number, participantId: number) {
+  return db.transaction(async (tx) => {
+    await loadDraw(tx, drawId, organizerId);
+    await loadParticipant(tx, drawId, participantId);
+    const token = newToken();
+    await tx.update(participants).set({ token }).where(eq(participants.id, participantId)).run();
+    return token;
+  });
+}
